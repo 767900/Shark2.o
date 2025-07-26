@@ -6,6 +6,8 @@ import ChatWindow from "@/components/chat-window"
 import InputBar from "@/components/input-bar"
 import VoiceSynthesizer from "@/components/voice-synthesizer"
 import VoiceChat from "@/components/voice-chat"
+import SharkLogo from "@/components/shark-logo"
+import SharkLoading from "@/components/shark-loading"
 import type { Message } from "@/types/chat"
 
 export default function AIWebChat() {
@@ -19,7 +21,7 @@ export default function AIWebChat() {
   ])
   const [inputText, setInputText] = useState("")
   const [isLoading, setIsLoading] = useState(false)
-  const [voiceEnabled, setVoiceEnabled] = useState(false)
+  const [voiceEnabled, setVoiceEnabled] = useState(true) // Enable voice by default
   const [currentProvider, setCurrentProvider] = useState<string>("Initializing...")
   const [lastAiMessage, setLastAiMessage] = useState<string>("")
   const [isSpeaking, setIsSpeaking] = useState(false)
@@ -95,8 +97,8 @@ export default function AIWebChat() {
       setMessages((prev) => [...prev, aiMessage])
       setCurrentProvider(data.provider || "Unknown")
 
-      // Trigger voice synthesis if enabled
-      if (voiceEnabled) {
+      // Trigger voice synthesis if enabled OR if it's a voice message
+      if (voiceEnabled || isVoice) {
         setLastAiMessage(data.content)
       }
     } catch (error) {
@@ -115,7 +117,8 @@ export default function AIWebChat() {
   }
 
   const handleVoiceMessage = async (transcript: string) => {
-    await handleSendMessage(transcript, true)
+    console.log("🎤 Processing voice message:", transcript)
+    await handleSendMessage(transcript, true) // Mark as voice message
   }
 
   const clearChat = () => {
@@ -185,11 +188,18 @@ export default function AIWebChat() {
           transition={{ duration: 0.5 }}
         >
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full flex items-center justify-center">
-              <span className="text-white font-bold text-lg">🦈</span>
-            </div>
+            <SharkLogo size="md" animated={true} glowing={isSpeaking} />
             <div>
-              <h1 className="text-xl font-bold text-white">Shark2.0</h1>
+              <h1 className="text-xl font-bold text-white flex items-center gap-2">
+                Shark2.0
+                <motion.span
+                  className="text-xs bg-gradient-to-r from-blue-500 to-cyan-500 text-white px-2 py-1 rounded-full"
+                  animate={{ opacity: [0.7, 1, 0.7] }}
+                  transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY }}
+                >
+                  AI
+                </motion.span>
+              </h1>
               <p className={`text-sm ${getStatusColor()}`}>
                 {getStatusIcon()} {currentProvider}
                 {isSpeaking && " • 🔊 Speaking"}
@@ -241,6 +251,7 @@ export default function AIWebChat() {
             {/* Chat Window */}
             <div className="flex-1 overflow-y-auto">
               <ChatWindow messages={messages} isLoading={isLoading} />
+              {isLoading && <SharkLoading />}
               <div ref={messagesEndRef} />
             </div>
 

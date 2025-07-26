@@ -1,6 +1,7 @@
 "use client"
 
 import { motion } from "framer-motion"
+import SharkAvatar from "@/components/shark-avatar"
 import type { Message } from "@/types/chat"
 
 interface MessageBubbleProps {
@@ -15,17 +16,13 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
     <div className={`flex ${isUser ? "justify-end" : "justify-start"} mb-4`}>
       <div className={`flex items-start gap-3 max-w-[80%] ${isUser ? "flex-row-reverse" : "flex-row"}`}>
         {/* Avatar */}
-        <div
-          className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-            isUser
-              ? "bg-gradient-to-r from-blue-500 to-purple-500 text-white"
-              : isError
-                ? "bg-red-500 text-white"
-                : "bg-gradient-to-r from-blue-500 to-cyan-500 text-white"
-          }`}
-        >
-          {isUser ? "U" : isError ? "!" : "🦈"}
-        </div>
+        {isUser ? (
+          <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 text-white flex items-center justify-center text-sm font-medium">
+            U
+          </div>
+        ) : (
+          <SharkAvatar size="sm" isActive={!isError} isSpeaking={false} />
+        )}
 
         {/* Message Content */}
         <motion.div
@@ -46,6 +43,7 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
             </span>
             <div className="flex items-center gap-2">
               {message.isVoice && <span className="text-xs opacity-70">🎤</span>}
+              {message.hasImage && <span className="text-xs opacity-70">📸</span>}
               {!isUser && !isError && <span className="text-xs opacity-70">🦈 Shark2.0</span>}
             </div>
           </div>

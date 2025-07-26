@@ -12,7 +12,7 @@ export async function POST(request: Request) {
         const { text } = await generateText({
           model: xai("grok-beta"),
           system:
-            "You are Shark2.0, a helpful AI assistant. Be conversational, friendly, and provide clear, concise responses with a bit of personality.",
+            "You are Shark2.0, a helpful AI assistant. Be conversational, friendly, and provide clear, concise responses with a bit of personality. Keep responses brief for voice conversations.",
           messages: messages,
         })
 
@@ -31,7 +31,7 @@ export async function POST(request: Request) {
         const { text } = await generateText({
           model: openai("gpt-4o-mini"),
           system:
-            "You are Shark2.0, a helpful AI assistant. Be conversational, friendly, and provide clear, concise responses.",
+            "You are Shark2.0, a helpful AI assistant. Be conversational, friendly, and provide clear, concise responses. Keep responses brief for voice conversations.",
           messages: messages,
         })
 
@@ -41,83 +41,43 @@ export async function POST(request: Request) {
       }
     }
 
-    // Try Groq as backup
-    if (process.env.GROQ_API_KEY) {
-      try {
-        const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            model: "llama3-8b-8192",
-            messages: [
-              {
-                role: "system",
-                content:
-                  "You are Shark2.0, a helpful AI assistant. Be conversational, friendly, and provide clear, concise responses.",
-              },
-              ...messages,
-            ],
-            temperature: 0.7,
-            max_tokens: 1000,
-          }),
-        })
-
-        if (response.ok) {
-          const data = await response.json()
-          return Response.json({
-            content: data.choices[0].message.content,
-            provider: "Groq (Llama3)",
-          })
-        }
-      } catch (error) {
-        console.log("Groq failed, using mock...", error.message)
-      }
-    }
-
-    // Enhanced mock responses with Shark2.0 personality
-    const sharkResponses = {
-      greetings: [
-        "Hey there! I'm Shark2.0, ready to dive into any topic you'd like to discuss! 🦈",
-        "Hello! Shark2.0 here - swimming through the digital ocean to help you out! What's on your mind?",
-        "Hi! I'm Shark2.0, your AI companion. Let's make some waves with our conversation! 🌊",
-      ],
-      questions: [
-        "That's a fin-tastic question! Let me think about that... 🦈",
-        "Great question! As Shark2.0, I love diving deep into interesting topics like this.",
-        "Interesting! Let me swim through my knowledge to give you a good answer.",
-      ],
-      general: [
-        "I'm Shark2.0, and I find that topic quite fascinating! Let me share my thoughts...",
-        "As your AI shark companion, I'd say that's worth exploring further!",
-        "Swimming through that idea, I think there are several angles to consider...",
-      ],
-      technology: [
-        "Technology is like the ocean - vast, deep, and full of amazing discoveries! As Shark2.0, I love exploring tech topics.",
-        "Tech talk with Shark2.0! I'm always excited to discuss the latest innovations and digital trends.",
-      ],
-      help: [
-        "I'm Shark2.0, and I'm here to help you navigate any challenge! What do you need assistance with?",
-        "Need help? You've got the right shark for the job! I'm Shark2.0, ready to assist.",
-      ],
-    }
-
+    // Enhanced mock responses with Shark2.0 personality - optimized for voice
     const lastMessage = messages[messages.length - 1]?.content?.toLowerCase() || ""
 
-    let responseArray = sharkResponses.general
-    if (lastMessage.includes("hello") || lastMessage.includes("hi") || lastMessage.includes("hey")) {
-      responseArray = sharkResponses.greetings
-    } else if (lastMessage.includes("?")) {
-      responseArray = sharkResponses.questions
-    } else if (lastMessage.includes("technology") || lastMessage.includes("tech")) {
-      responseArray = sharkResponses.technology
-    } else if (lastMessage.includes("help")) {
-      responseArray = sharkResponses.help
+    // Voice-optimized responses (shorter and more conversational)
+    const voiceResponses = {
+      greetings: [
+        "Hi there! I'm Shark2.0, your AI assistant. How can I help you today?",
+        "Hello! Shark2.0 here, ready to assist you. What's on your mind?",
+        "Hey! I'm Shark2.0. Great to meet you! What can I do for you?",
+      ],
+      questions: [
+        "That's a great question! Let me think about that for you.",
+        "Interesting question! Here's what I think about that.",
+        "Good question! I'd be happy to help you with that.",
+      ],
+      general: [
+        "I'm Shark2.0, and I find that quite interesting! Let me share my thoughts.",
+        "As your AI assistant, I'd be happy to help you with that!",
+        "That's a fascinating topic! I'd love to discuss that with you.",
+      ],
+      help: [
+        "I'm Shark2.0, and I'm here to help! What do you need assistance with?",
+        "I'm your AI assistant, ready to help with whatever you need.",
+        "Of course! I'm Shark2.0, and helping you is what I do best!",
+      ],
     }
 
-    await new Promise((resolve) => setTimeout(resolve, 1000 + Math.random() * 1500))
+    let responseArray = voiceResponses.general
+    if (lastMessage.includes("hello") || lastMessage.includes("hi") || lastMessage.includes("hey")) {
+      responseArray = voiceResponses.greetings
+    } else if (lastMessage.includes("?")) {
+      responseArray = voiceResponses.questions
+    } else if (lastMessage.includes("help")) {
+      responseArray = voiceResponses.help
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, 1000 + Math.random() * 1000))
 
     return Response.json({
       content: responseArray[Math.floor(Math.random() * responseArray.length)],
@@ -126,7 +86,7 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error("Chat API error:", error)
     return Response.json({
-      content: "Oops! Shark2.0 encountered some rough waters. Let me try again! 🦈",
+      content: "Sorry, I encountered some rough waters. Let me try again!",
       provider: "Error",
     })
   }
