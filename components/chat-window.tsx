@@ -8,9 +8,10 @@ import type { Message } from "@/types/chat"
 interface ChatWindowProps {
   messages: Message[]
   isLoading: boolean
+  onRelatedQuestionClick?: (question: string) => void
 }
 
-export default function ChatWindow({ messages, isLoading }: ChatWindowProps) {
+export default function ChatWindow({ messages, isLoading, onRelatedQuestionClick }: ChatWindowProps) {
   return (
     <div className="w-full h-full overflow-y-auto p-4 space-y-4">
       <AnimatePresence>
@@ -22,7 +23,7 @@ export default function ChatWindow({ messages, isLoading }: ChatWindowProps) {
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.3, delay: index * 0.1 }}
           >
-            <MessageBubble message={message} />
+            <MessageBubble message={message} onRelatedQuestionClick={onRelatedQuestionClick} />
           </motion.div>
         ))}
       </AnimatePresence>

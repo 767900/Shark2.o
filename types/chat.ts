@@ -6,4 +6,10 @@ export interface Message {
   isVoice?: boolean
   isError?: boolean
   hasImage?: boolean
+  citations?: Array<{
+    url: string
+    title?: string
+    snippet?: string
+  }>
+  related_questions?: string[]
 }
