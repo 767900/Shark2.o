@@ -1,93 +1,164 @@
-// Multi-provider AI chat API with xAI integration
 export async function POST(request: Request) {
   try {
-    const { messages } = await request.json()
+    console.log("🚀 CHAT API: Request received")
 
-    // Try xAI first (Grok)
-    if (process.env.XAI_API_KEY) {
+    const body = await request.json()
+    const { messages } = body
+
+    console.log("📝 CHAT API: Messages received:", messages?.length)
+
+    if (!messages || !Array.isArray(messages)) {
+      console.error("❌ CHAT API: Invalid messages format")
+      return Response.json(
+        {
+          error: "Invalid messages format",
+          content: "🦈 **Error:** Invalid message format. Please try again! 🇮🇳",
+        },
+        { status: 400 },
+      )
+    }
+
+    // Multiple API keys and models to try
+    const apiConfigs = [
+      {
+        name: "OpenAI GPT-4",
+        apiKey: process.env.OPENAI_API_KEY,
+        url: "https://api.openai.com/v1/chat/completions",
+        model: "gpt-4",
+        headers: (key: string) => ({
+          Authorization: `Bearer ${key}`,
+          "Content-Type": "application/json",
+        }),
+      },
+      {
+        name: "OpenAI GPT-3.5",
+        apiKey: process.env.OPENAI_API_KEY,
+        url: "https://api.openai.com/v1/chat/completions",
+        model: "gpt-3.5-turbo",
+        headers: (key: string) => ({
+          Authorization: `Bearer ${key}`,
+          "Content-Type": "application/json",
+        }),
+      },
+      {
+        name: "Groq Llama",
+        apiKey: process.env.GROQ_API_KEY,
+        url: "https://api.groq.com/openai/v1/chat/completions",
+        model: "llama3-8b-8192",
+        headers: (key: string) => ({
+          Authorization: `Bearer ${key}`,
+          "Content-Type": "application/json",
+        }),
+      },
+      {
+        name: "xAI Grok",
+        apiKey: process.env.XAI_API_KEY,
+        url: "https://api.x.ai/v1/chat/completions",
+        model: "grok-beta",
+        headers: (key: string) => ({
+          Authorization: `Bearer ${key}`,
+          "Content-Type": "application/json",
+        }),
+      },
+    ]
+
+    // Try each API configuration
+    for (const config of apiConfigs) {
+      if (!config.apiKey) {
+        console.log(`⏭️ CHAT API: Skipping ${config.name} - no API key`)
+        continue
+      }
+
       try {
-        const { xai } = await import("@ai-sdk/xai")
-        const { generateText } = await import("ai")
+        console.log(`🔍 CHAT API: Trying ${config.name}...`)
 
-        const { text } = await generateText({
-          model: xai("grok-beta"),
-          system:
-            "You are Shark2.0, a helpful AI assistant. Be conversational, friendly, and provide clear, concise responses with a bit of personality. Keep responses brief for voice conversations.",
-          messages: messages,
+        const requestBody = {
+          model: config.model,
+          messages: [
+            {
+              role: "system",
+              content:
+                "You are Shark 2.0, a helpful AI assistant from India. Provide accurate, helpful information. Be friendly and informative, and always end responses with relevant emojis.",
+            },
+            ...messages,
+          ],
+          max_tokens: 1500,
+          temperature: 0.7,
+        }
+
+        const response = await fetch(config.url, {
+          method: "POST",
+          headers: config.headers(config.apiKey),
+          body: JSON.stringify(requestBody),
         })
 
-        return Response.json({ content: text, provider: "xAI (Grok)" })
+        console.log(`📡 CHAT API: ${config.name} response status:`, response.status)
+
+        if (response.ok) {
+          const data = await response.json()
+          console.log(`✅ CHAT API: ${config.name} success!`)
+
+          return Response.json({
+            content: data.choices[0].message.content,
+            provider: config.name,
+            model: config.model,
+            status: "success",
+          })
+        } else {
+          const errorText = await response.text()
+          console.log(`❌ CHAT API: ${config.name} failed:`, response.status, errorText.substring(0, 100))
+        }
       } catch (error) {
-        console.log("xAI failed, trying alternatives...", error.message)
+        console.log(`💥 CHAT API: ${config.name} error:`, error.message)
       }
     }
 
-    // Try OpenAI as backup
-    if (process.env.OPENAI_API_KEY) {
-      try {
-        const { openai } = await import("@ai-sdk/openai")
-        const { generateText } = await import("ai")
+    // If all APIs fail, provide intelligent fallback
+    const userQuestion = messages[messages.length - 1]?.content || ""
+    let fallbackResponse = "🦈 **Shark 2.0 - Offline Mode** 🦈\n\n"
 
-        const { text } = await generateText({
-          model: openai("gpt-4o-mini"),
-          system:
-            "You are Shark2.0, a helpful AI assistant. Be conversational, friendly, and provide clear, concise responses. Keep responses brief for voice conversations.",
-          messages: messages,
-        })
-
-        return Response.json({ content: text, provider: "OpenAI" })
-      } catch (error) {
-        console.log("OpenAI failed, trying alternatives...", error.message)
-      }
+    // Smart responses based on question type
+    if (userQuestion.toLowerCase().includes("time")) {
+      const currentTime = new Date().toLocaleString("en-IN", {
+        timeZone: "Asia/Kolkata",
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+      fallbackResponse += `🕐 **Current Time in India:** ${currentTime}\n\n`
+    } else if (userQuestion.toLowerCase().includes("hello") || userQuestion.toLowerCase().includes("hi")) {
+      fallbackResponse += `🙏 **Namaste!** Hello there!\n\n`
+    } else if (userQuestion.toLowerCase().includes("weather")) {
+      fallbackResponse += `🌤️ I'd love to help with weather information!\n\n`
+    } else if (userQuestion.toLowerCase().includes("news")) {
+      fallbackResponse += `📰 I'd be happy to help with news updates!\n\n`
+    } else {
+      fallbackResponse += `I understand you're asking: "${userQuestion}"\n\n`
     }
 
-    // Enhanced mock responses with Shark2.0 personality - optimized for voice
-    const lastMessage = messages[messages.length - 1]?.content?.toLowerCase() || ""
-
-    // Voice-optimized responses (shorter and more conversational)
-    const voiceResponses = {
-      greetings: [
-        "Hi there! I'm Shark2.0, your AI assistant. How can I help you today?",
-        "Hello! Shark2.0 here, ready to assist you. What's on your mind?",
-        "Hey! I'm Shark2.0. Great to meet you! What can I do for you?",
-      ],
-      questions: [
-        "That's a great question! Let me think about that for you.",
-        "Interesting question! Here's what I think about that.",
-        "Good question! I'd be happy to help you with that.",
-      ],
-      general: [
-        "I'm Shark2.0, and I find that quite interesting! Let me share my thoughts.",
-        "As your AI assistant, I'd be happy to help you with that!",
-        "That's a fascinating topic! I'd love to discuss that with you.",
-      ],
-      help: [
-        "I'm Shark2.0, and I'm here to help! What do you need assistance with?",
-        "I'm your AI assistant, ready to help with whatever you need.",
-        "Of course! I'm Shark2.0, and helping you is what I do best!",
-      ],
-    }
-
-    let responseArray = voiceResponses.general
-    if (lastMessage.includes("hello") || lastMessage.includes("hi") || lastMessage.includes("hey")) {
-      responseArray = voiceResponses.greetings
-    } else if (lastMessage.includes("?")) {
-      responseArray = voiceResponses.questions
-    } else if (lastMessage.includes("help")) {
-      responseArray = voiceResponses.help
-    }
-
-    await new Promise((resolve) => setTimeout(resolve, 1000 + Math.random() * 1000))
+    fallbackResponse += `**🔧 System Status:**\n• AI models are currently unavailable\n• This is a smart fallback response\n\n**💡 Solutions:**\n• Check your internet connection\n• Try again in a few moments\n• Contact support if issues persist\n\nI'm still here to help once the connection is restored! 🇮🇳✨`
 
     return Response.json({
-      content: responseArray[Math.floor(Math.random() * responseArray.length)],
-      provider: "Shark2.0 Demo",
+      content: fallbackResponse,
+      provider: "Smart Fallback",
+      status: "fallback",
+      debug: {
+        attempted: apiConfigs.map((c) => ({ name: c.name, hasKey: !!c.apiKey })),
+        timestamp: new Date().toISOString(),
+      },
     })
   } catch (error) {
-    console.error("Chat API error:", error)
-    return Response.json({
-      content: "Sorry, I encountered some rough waters. Let me try again!",
-      provider: "Error",
-    })
+    console.error("💥 CHAT API: Unexpected error:", error)
+
+    return Response.json(
+      {
+        error: error.message,
+        content: `🦈 **System Error** 🦈\n\nSomething unexpected happened:\n\n**Error:** ${error.message}\n\nI'm still here to help! Please try asking your question again. 🇮🇳`,
+      },
+      { status: 500 },
+    )
   }
 }
