@@ -5,7 +5,7 @@ import { motion } from "framer-motion"
 import ChatWindow from "@/components/chat-window"
 import InputBar from "@/components/input-bar"
 import VoiceSynthesizer from "@/components/voice-synthesizer"
-import SciFiLogo from "@/components/sci-fi-logo"
+import SharkLogo from "@/components/shark-logo"
 import SharkLoading from "@/components/shark-loading"
 import type { Message } from "@/types/chat"
 
@@ -207,7 +207,7 @@ export default function AIWebChat() {
           transition={{ duration: 0.5 }}
         >
           <div className="flex items-center gap-4">
-            <SciFiLogo size="md" animated={true} glowing={isSpeaking} />
+            <SharkLogo size="md" animated={true} glowing={isSpeaking} />
             <div>
               <h1 className="text-2xl font-bold text-white flex items-center gap-3">
                 Shark 2.0 🇮🇳
