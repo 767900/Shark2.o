@@ -1,9 +1,9 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import { motion, AnimatePresence } from "framer-motion"
 import { ArrowLeft, MicOff } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { motion } from "framer-motion"
 
 interface VoiceOnlyModeProps {
   onSendMessage: (message: string, isVoice?: boolean) => void
@@ -19,98 +19,168 @@ export default function VoiceOnlyMode({ onSendMessage, isLoading, onBack }: Voic
   const [status, setStatus] = useState("Tap the Indian flag to start voice conversation")
   const [isProcessing, setIsProcessing] = useState(false)
   const [isSupported, setIsSupported] = useState(false)
+  const [permissionGranted, setPermissionGranted] = useState(false)
   const recognitionRef = useRef<any>(null)
   const utteranceRef = useRef<any>(null)
   const isSpeakingRef = useRef(false)
+  const isListeningRef = useRef(false)
 
-  // Initialize speech recognition
+  // Initialize speech recognition with better setup
   useEffect(() => {
-    if (typeof window !== "undefined") {
+    const initializeVoiceRecognition = async () => {
+      if (typeof window === "undefined") return
+
+      // Check for speech recognition support
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
 
-      if (SpeechRecognition) {
+      if (!SpeechRecognition) {
+        setIsSupported(false)
+        setStatus("Speech recognition not supported in this browser")
+        return
+      }
+
+      try {
+        // Request microphone permission first
+        console.log("🎤 Requesting microphone permission...")
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+        stream.getTracks().forEach((track) => track.stop()) // Stop the stream, we just needed permission
+        setPermissionGranted(true)
+        console.log("✅ Microphone permission granted!")
+
+        // Create recognition instance
         const recognitionInstance = new SpeechRecognition()
 
-        // Optimized recognition settings
+        // Enhanced recognition settings for better accuracy
         recognitionInstance.continuous = false
-        recognitionInstance.interimResults = false
+        recognitionInstance.interimResults = true // Enable interim results for better feedback
         recognitionInstance.lang = "en-US"
-        recognitionInstance.maxAlternatives = 1
 
+        // Only set maxAlternatives if supported
+        if ("maxAlternatives" in recognitionInstance) {
+          recognitionInstance.maxAlternatives = 3
+        }
+
+        // Event handlers
         recognitionInstance.onstart = () => {
-          console.log("🎤 Voice recognition started")
+          console.log("🎤 Voice recognition started successfully")
+          isListeningRef.current = true
           setIsListening(true)
-          setStatus("🎤 Listening... speak clearly!")
+          setStatus("🎤 Listening... speak now!")
           setTranscript("")
         }
 
         recognitionInstance.onresult = (event: any) => {
           console.log("🎯 Voice recognition result received")
-          const results = event.results
-          const lastResult = results[results.length - 1]
 
-          if (lastResult.isFinal) {
-            const finalTranscript = lastResult[0].transcript.trim()
-            console.log("✅ Final transcript:", finalTranscript)
+          let interimTranscript = ""
+          let finalTranscript = ""
 
-            if (finalTranscript) {
-              setTranscript(finalTranscript)
-              setStatus(`Processing: "${finalTranscript}"`)
-              setIsListening(false)
-              handleVoiceQuery(finalTranscript)
+          // Process all results
+          for (let i = event.resultIndex; i < event.results.length; i++) {
+            const result = event.results[i]
+            const transcript = result[0].transcript
+
+            if (result.isFinal) {
+              finalTranscript += transcript
+              console.log("✅ Final transcript:", transcript)
             } else {
-              setStatus("No speech detected. Tap flag to try again!")
-              setIsListening(false)
+              interimTranscript += transcript
+              console.log("⏳ Interim transcript:", transcript)
             }
           }
+
+          // Show interim results for user feedback
+          if (interimTranscript) {
+            setTranscript(interimTranscript)
+            setStatus(`🎤 Hearing: "${interimTranscript}"`)
+          }
+
+          // Process final result
+          if (finalTranscript.trim()) {
+            const cleanTranscript = finalTranscript.trim()
+            console.log("🎯 Processing final transcript:", cleanTranscript)
+
+            setTranscript(cleanTranscript)
+            setStatus(`✅ Got it: "${cleanTranscript}"`)
+            setIsListening(false)
+            isListeningRef.current = false
+
+            // Process the voice query
+            setTimeout(() => {
+              handleVoiceQuery(cleanTranscript)
+            }, 500)
+          }
+        }
+
+        recognitionInstance.onspeechstart = () => {
+          console.log("🗣️ Speech detected!")
+          setStatus("🗣️ Speech detected... keep talking!")
+        }
+
+        recognitionInstance.onspeechend = () => {
+          console.log("🔇 Speech ended")
+          setStatus("🔄 Processing what you said...")
         }
 
         recognitionInstance.onend = () => {
           console.log("🛑 Voice recognition ended")
+          isListeningRef.current = false
           setIsListening(false)
+
           if (!transcript && !isProcessing) {
-            setStatus("Voice session ended. Tap flag to try again!")
+            setStatus("No speech detected. Tap flag to try again!")
           }
         }
 
         recognitionInstance.onerror = (event: any) => {
-          console.log("⚠️ Voice recognition event:", event.error)
+          console.log("⚠️ Voice recognition error:", event.error)
+          isListeningRef.current = false
           setIsListening(false)
 
-          // Handle different error types gracefully
+          // Handle different error types with helpful messages
           switch (event.error) {
             case "no-speech":
-              setStatus("No speech detected. Please speak louder and try again!")
+              setStatus("🔇 No speech detected. Speak louder and try again!")
               break
             case "audio-capture":
-              setStatus("Microphone not accessible. Check permissions and try again!")
+              setStatus("🎤 Microphone issue. Check your microphone and try again!")
               break
             case "not-allowed":
-              setStatus("Microphone permission denied. Please allow microphone access!")
+              setStatus("🚫 Microphone permission denied. Please allow microphone access!")
+              setPermissionGranted(false)
               break
             case "network":
-              setStatus("Network error. Check connection and try again!")
+              setStatus("🌐 Network error. Check your connection and try again!")
               break
             case "aborted":
-              setStatus("Voice recognition stopped. Tap flag to restart!")
+              setStatus("⏹️ Voice recognition stopped. Tap flag to restart!")
               break
             case "language-not-supported":
-              setStatus("Language not supported. Using English by default.")
+              setStatus("🌍 Language not supported. Using English by default.")
+              break
+            case "service-not-allowed":
+              setStatus("🔒 Voice service not allowed. Try refreshing the page!")
               break
             default:
-              setStatus(`Voice error: ${event.error}. Tap flag to retry!`)
+              setStatus(`❌ Voice error: ${event.error}. Tap flag to retry!`)
           }
         }
 
         recognitionRef.current = recognitionInstance
         setRecognition(recognitionInstance)
         setIsSupported(true)
-        setStatus("Ready! Tap the Indian flag to start voice chat")
-      } else {
-        setIsSupported(false)
-        setStatus("Speech recognition not supported in this browser")
+        setStatus("✅ Ready! Tap the Indian flag to start voice chat")
+
+        console.log("🎤 Voice recognition initialized successfully!")
+      } catch (error) {
+        console.error("❌ Failed to initialize voice recognition:", error)
+        setPermissionGranted(false)
+        setIsSupported(true) // Still supported, just no permission
+        setStatus("🎤 Microphone permission required. Please allow access!")
       }
     }
+
+    initializeVoiceRecognition()
   }, [transcript, isProcessing])
 
   // Cleanup on unmount
@@ -119,11 +189,11 @@ export default function VoiceOnlyMode({ onSendMessage, isLoading, onBack }: Voic
       if (utteranceRef.current && window.speechSynthesis) {
         window.speechSynthesis.cancel()
       }
-      if (recognitionRef.current) {
+      if (recognitionRef.current && isListeningRef.current) {
         try {
           recognitionRef.current.stop()
         } catch (e) {
-          // Ignore errors on cleanup
+          console.log("Cleanup: Recognition already stopped")
         }
       }
     }
@@ -132,7 +202,7 @@ export default function VoiceOnlyMode({ onSendMessage, isLoading, onBack }: Voic
   const handleVoiceQuery = async (query: string) => {
     try {
       setIsProcessing(true)
-      setStatus("🤖 Getting smart AI response...")
+      setStatus("🤖 Shark 2.0 is thinking...")
 
       console.log("🚀 Sending voice query to AI:", query)
 
@@ -146,7 +216,7 @@ export default function VoiceOnlyMode({ onSendMessage, isLoading, onBack }: Voic
 
       if (response.ok) {
         const data = await response.json()
-        const aiResponse = data.content || "Sorry, no response received."
+        const aiResponse = data.content || "Sorry, I didn't get a response."
 
         console.log("✅ AI response received:", aiResponse.substring(0, 100) + "...")
 
@@ -154,22 +224,40 @@ export default function VoiceOnlyMode({ onSendMessage, isLoading, onBack }: Voic
         speakResponse(aiResponse)
       } else {
         console.error("❌ API response error:", response.status)
-        setStatus("API error. Tap flag to try again!")
+        setStatus("❌ API error. Tap flag to try again!")
         setIsProcessing(false)
       }
     } catch (error) {
       console.error("💥 Voice query error:", error)
-      setStatus("Connection error. Tap flag to retry!")
+      setStatus("❌ Connection error. Tap flag to retry!")
       setIsProcessing(false)
     }
   }
 
   const speakResponse = (text: string) => {
     if (!text || typeof window === "undefined" || !("speechSynthesis" in window)) {
-      setStatus("Speech synthesis not available")
+      setStatus("❌ Speech synthesis not available")
       setIsProcessing(false)
       return
     }
+
+    // Clean text by removing emojis and special characters for speech
+    const cleanTextForSpeech = (text: string) => {
+      return text
+        .replace(
+          /[\u{1F600}-\u{1F64F}]|[\u{1F300}-\u{1F5FF}]|[\u{1F680}-\u{1F6FF}]|[\u{1F1E0}-\u{1F1FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/gu,
+          "",
+        ) // Remove emojis
+        .replace(/\*\*(.*?)\*\*/g, "$1") // Remove markdown bold
+        .replace(/\*(.*?)\*/g, "$1") // Remove markdown italic
+        .replace(/#{1,6}\s/g, "") // Remove markdown headers
+        .replace(/•/g, "") // Remove bullet points
+        .replace(/🦈|🇮🇳|🚀|✅|🧠|💻|📚|🎯|🔥|💪|🌟/g, "") // Remove specific emojis
+        .replace(/\s+/g, " ") // Replace multiple spaces with single space
+        .trim()
+    }
+
+    const speechText = cleanTextForSpeech(text)
 
     // Clean up any existing speech
     if (utteranceRef.current) {
@@ -180,7 +268,7 @@ export default function VoiceOnlyMode({ onSendMessage, isLoading, onBack }: Voic
     // Wait for speech synthesis to be ready
     const speak = () => {
       try {
-        const utterance = new SpeechSynthesisUtterance(text)
+        const utterance = new SpeechSynthesisUtterance(speechText)
         utteranceRef.current = utterance
         isSpeakingRef.current = true
 
@@ -198,7 +286,7 @@ export default function VoiceOnlyMode({ onSendMessage, isLoading, onBack }: Voic
         }
 
         utterance.onend = () => {
-          console.log("🔇 Speech synthesis ended normally")
+          console.log("🔇 Speech synthesis ended")
           if (isSpeakingRef.current) {
             setIsSpeaking(false)
             setIsProcessing(false)
@@ -210,78 +298,86 @@ export default function VoiceOnlyMode({ onSendMessage, isLoading, onBack }: Voic
         }
 
         utterance.onerror = (event) => {
-          console.log("⚠️ Speech synthesis event:", event.error)
-
-          // Handle different error types
-          if (event.error === "interrupted") {
-            console.log("Speech was intentionally stopped")
-          } else if (event.error === "canceled") {
-            console.log("Speech was canceled")
-          } else {
-            console.error("Speech synthesis error:", event.error)
-            setStatus("Speech error. Tap flag to try again!")
-          }
-
-          // Clean up state
+          console.log("⚠️ Speech synthesis error:", event.error)
           if (isSpeakingRef.current) {
             setIsSpeaking(false)
             setIsProcessing(false)
+            setStatus("❌ Speech error. Tap flag to try again!")
             utteranceRef.current = null
             isSpeakingRef.current = false
           }
         }
 
-        // Start speaking
         console.log("🎵 Starting speech synthesis...")
         window.speechSynthesis.speak(utterance)
       } catch (error) {
         console.error("❌ Error creating speech:", error)
         setIsSpeaking(false)
         setIsProcessing(false)
-        setStatus("Speech error. Tap flag to try again!")
+        setStatus("❌ Speech error. Tap flag to try again!")
       }
     }
 
     // Ensure speech synthesis is ready
     if (window.speechSynthesis.pending || window.speechSynthesis.speaking) {
       window.speechSynthesis.cancel()
-      setTimeout(speak, 100)
+      setTimeout(speak, 200)
     } else {
       speak()
     }
   }
 
   const startListening = () => {
-    if (!recognitionRef.current || isListening || isSpeaking || isLoading || isProcessing) {
-      console.log("❌ Cannot start - conditions not met")
+    if (
+      !recognitionRef.current ||
+      isListeningRef.current ||
+      isSpeaking ||
+      isLoading ||
+      isProcessing ||
+      !permissionGranted
+    ) {
+      console.log("❌ Cannot start listening - conditions not met")
+      if (!permissionGranted) {
+        setStatus("🎤 Microphone permission required!")
+      }
       return
     }
 
     try {
       console.log("🎯 Starting voice recognition...")
-      setStatus("🎤 Get ready to speak...")
+      setStatus("🎤 Starting... get ready to speak!")
+      setTranscript("")
 
-      // Add a small delay to ensure proper initialization
+      // Small delay to ensure proper state management
       setTimeout(() => {
-        if (recognitionRef.current && !isListening) {
-          recognitionRef.current.start()
+        if (recognitionRef.current && !isListeningRef.current) {
+          try {
+            recognitionRef.current.start()
+          } catch (error) {
+            console.error("❌ Error starting recognition:", error)
+            setStatus("❌ Error starting voice. Try again!")
+          }
         }
-      }, 100)
+      }, 200)
     } catch (error) {
-      console.error("❌ Error starting recognition:", error)
-      setStatus("Error starting voice recognition. Try again!")
+      console.error("❌ Error in startListening:", error)
+      setStatus("❌ Voice error. Try again!")
     }
   }
 
   const stopListening = () => {
-    if (recognitionRef.current && isListening) {
+    if (recognitionRef.current && isListeningRef.current) {
       console.log("🛑 Stopping voice recognition...")
       try {
         recognitionRef.current.stop()
+        isListeningRef.current = false
+        setIsListening(false)
+        setStatus("⏹️ Voice stopped. Tap flag to continue.")
       } catch (error) {
         console.log("Error stopping recognition:", error)
+        isListeningRef.current = false
         setIsListening(false)
-        setStatus("Voice stopped. Tap flag to continue.")
+        setStatus("⏹️ Voice stopped.")
       }
     }
   }
@@ -293,12 +389,9 @@ export default function VoiceOnlyMode({ onSendMessage, isLoading, onBack }: Voic
       isSpeakingRef.current = false
       window.speechSynthesis.cancel()
 
-      // Update state immediately
       setIsSpeaking(false)
       setIsProcessing(false)
-      setStatus("Speech stopped. Tap flag to continue.")
-
-      // Clean up
+      setStatus("⏹️ Speech stopped. Tap flag to continue.")
       utteranceRef.current = null
     }
   }
@@ -308,8 +401,11 @@ export default function VoiceOnlyMode({ onSendMessage, isLoading, onBack }: Voic
       stopSpeaking()
     } else if (isListening) {
       stopListening()
-    } else if (!isProcessing) {
+    } else if (!isProcessing && permissionGranted) {
       startListening()
+    } else if (!permissionGranted) {
+      // Try to request permission again
+      window.location.reload()
     }
   }
 
@@ -328,6 +424,26 @@ export default function VoiceOnlyMode({ onSendMessage, isLoading, onBack }: Voic
     )
   }
 
+  if (!permissionGranted) {
+    return (
+      <div className="flex-1 flex items-center justify-center p-8">
+        <div className="text-center text-white">
+          <h2 className="text-2xl mb-4">🎤 Microphone Access Required</h2>
+          <p className="mb-4">Voice mode needs microphone access to work properly.</p>
+          <div className="space-y-4">
+            <Button onClick={() => window.location.reload()} className="bg-green-600 hover:bg-green-700">
+              🔄 Grant Permission & Reload
+            </Button>
+            <Button onClick={onBack} variant="outline" className="bg-white/10 text-white border-white/20">
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back to Chat
+            </Button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="flex-1 flex flex-col">
       {/* Header */}
@@ -339,7 +455,7 @@ export default function VoiceOnlyMode({ onSendMessage, isLoading, onBack }: Voic
           </Button>
           <div>
             <h2 className="text-xl font-bold text-white">🇮🇳 Voice Mode</h2>
-            <p className="text-sm text-white/70">Voice conversation with Shark 2.0</p>
+            <p className="text-sm text-white/70">Enhanced voice conversation with Shark 2.0</p>
           </div>
         </div>
       </div>
@@ -462,62 +578,58 @@ export default function VoiceOnlyMode({ onSendMessage, isLoading, onBack }: Voic
           </motion.button>
 
           {/* Voice wave animation around the flag */}
-          <AnimatePresence>
-            {(isListening || isSpeaking) && (
-              <div className="absolute -bottom-20 left-1/2 transform -translate-x-1/2 flex items-end gap-1">
-                {Array.from({ length: 20 }).map((_, i) => (
-                  <motion.div
-                    key={i}
-                    className={`w-2 rounded-full ${isListening ? "bg-orange-400" : "bg-green-500"}`}
-                    animate={{
-                      height: [8, Math.random() * 50 + 25, 8],
-                    }}
-                    transition={{
-                      duration: 0.6,
-                      repeat: Number.POSITIVE_INFINITY,
-                      repeatType: "reverse",
-                      delay: i * 0.05,
-                    }}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                  />
-                ))}
-              </div>
-            )}
-          </AnimatePresence>
+          {(isListening || isSpeaking) && (
+            <div className="absolute -bottom-20 left-1/2 transform -translate-x-1/2 flex items-end gap-1">
+              {Array.from({ length: 20 }).map((_, i) => (
+                <motion.div
+                  key={i}
+                  className={`w-2 rounded-full ${isListening ? "bg-orange-400" : "bg-green-500"}`}
+                  animate={{
+                    height: [8, Math.random() * 50 + 25, 8],
+                  }}
+                  transition={{
+                    duration: 0.6,
+                    repeat: Number.POSITIVE_INFINITY,
+                    repeatType: "reverse",
+                    delay: i * 0.05,
+                  }}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                />
+              ))}
+            </div>
+          )}
 
           {/* Floating particles */}
-          <AnimatePresence>
-            {(isListening || isSpeaking || isProcessing) && (
-              <>
-                {Array.from({ length: 8 }).map((_, i) => (
-                  <motion.div
-                    key={i}
-                    className={`absolute w-3 h-3 rounded-full ${
-                      isListening ? "bg-orange-400" : isSpeaking ? "bg-green-500" : "bg-blue-500"
-                    }`}
-                    style={{
-                      top: "50%",
-                      left: "50%",
-                      transformOrigin: "0 0",
-                    }}
-                    animate={{
-                      x: [0, Math.cos((i * Math.PI * 2) / 8) * 150],
-                      y: [0, Math.sin((i * Math.PI * 2) / 8) * 150],
-                      opacity: [0, 1, 0],
-                      scale: [0, 1, 0],
-                    }}
-                    transition={{
-                      duration: 2,
-                      repeat: Number.POSITIVE_INFINITY,
-                      delay: i * 0.2,
-                    }}
-                  />
-                ))}
-              </>
-            )}
-          </AnimatePresence>
+          {(isListening || isSpeaking || isProcessing) && (
+            <>
+              {Array.from({ length: 8 }).map((_, i) => (
+                <motion.div
+                  key={i}
+                  className={`absolute w-3 h-3 rounded-full ${
+                    isListening ? "bg-orange-400" : isSpeaking ? "bg-green-500" : "bg-blue-500"
+                  }`}
+                  style={{
+                    top: "50%",
+                    left: "50%",
+                    transformOrigin: "0 0",
+                  }}
+                  animate={{
+                    x: [0, Math.cos((i * Math.PI * 2) / 8) * 150],
+                    y: [0, Math.sin((i * Math.PI * 2) / 8) * 150],
+                    opacity: [0, 1, 0],
+                    scale: [0, 1, 0],
+                  }}
+                  transition={{
+                    duration: 2,
+                    repeat: Number.POSITIVE_INFINITY,
+                    delay: i * 0.2,
+                  }}
+                />
+              ))}
+            </>
+          )}
         </div>
 
         {/* Status Display */}
@@ -556,10 +668,10 @@ export default function VoiceOnlyMode({ onSendMessage, isLoading, onBack }: Voic
           </div>
         </motion.div>
 
-        {/* Instructions */}
+        {/* Enhanced Instructions */}
         <div className="text-center text-sm text-white/60 max-w-lg">
           <div className="bg-black/30 p-4 rounded-lg">
-            <h4 className="font-semibold mb-2 text-white/80">🇮🇳 Voice Mode Instructions:</h4>
+            <h4 className="font-semibold mb-2 text-white/80">🇮🇳 Enhanced Voice Mode:</h4>
             <div className="space-y-1 text-left">
               <p>
                 🇮🇳 <strong>Tap Indian flag</strong> to start listening
@@ -568,17 +680,23 @@ export default function VoiceOnlyMode({ onSendMessage, isLoading, onBack }: Voic
                 🗣️ <strong>Speak clearly</strong> when flag glows orange
               </p>
               <p>
+                👀 <strong>Watch status</strong> for real-time feedback
+              </p>
+              <p>
                 🤖 <strong>AI processes</strong> your question (blue glow)
               </p>
               <p>
-                🔊 <strong>Listen</strong> to Shark 2.0's voice response (green glow)
+                🔊 <strong>Listen</strong> to Shark 2.0's response (green glow)
               </p>
               <p>
-                🔄 <strong>Tap again</strong> to ask another question
+                🔄 <strong>Tap again</strong> for next question
               </p>
               <p>
-                ⏹️ <strong>Tap during speech</strong> to stop
+                ⏹️ <strong>Tap during speech</strong> to stop anytime
               </p>
+            </div>
+            <div className="mt-3 text-xs text-yellow-400">
+              💡 <strong>Tip:</strong> Speak loudly and clearly for best results!
             </div>
           </div>
         </div>

@@ -10,12 +10,25 @@ import SharkLoading from "@/components/shark-loading"
 import VoiceOnlyMode from "@/components/voice-only-mode"
 import type { Message } from "@/types/chat"
 
+const getRandomWelcomeMessage = () => {
+  const welcomeMessages = [
+    "Hello! I'm Shark 2.0. How can I help you today?",
+    "Hi there! I'm ready to assist you. What would you like to know?",
+    "Namaste! I'm Shark 2.0, your AI assistant. What can I do for you?",
+    "Welcome! I'm here to help with any questions you have.",
+    "Hey! I'm Shark 2.0. Ready to help you with anything!",
+    "Hi! I'm your AI assistant. What would you like to explore today?",
+    "Hello! I'm Shark 2.0 from India. How may I assist you?",
+    "Greetings! I'm ready to help. What's on your mind?",
+  ]
+  return welcomeMessages[Math.floor(Math.random() * welcomeMessages.length)]
+}
+
 export default function AIWebChat() {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "1",
-      content:
-        '🚀 **Shark 2.0 - READY TO HELP!** 🚀\n\n✅ **Smart Assistant Active!**\n\nNamaste! I\'m Shark 2.0, your intelligent AI assistant from India! 🦈🇮🇳\n\n🧠 **I can help you with:**\n• **Programming & Technology** - Python, JavaScript, React, AI/ML\n• **Indian Culture & Knowledge** - Festivals, history, traditions\n• **Education & Learning** - Science, math, explanations\n• **Problem Solving** - Analysis, advice, step-by-step solutions\n• **General Knowledge** - Wide range of topics and questions\n\n🔥 **Try asking me:**\n• "Explain machine learning in simple terms"\n• "What are the major festivals in India?"\n• "Help me with Python programming"\n• "Tell me about Indian independence history"\n• "How does React work?"\n\n💪 **I\'m ready to provide detailed, intelligent answers!**\n\n*For enhanced capabilities with real-time search, add API keys for Perplexity, OpenAI, or Groq.*',
+      content: getRandomWelcomeMessage(),
       role: "assistant",
       timestamp: new Date(),
     },
@@ -122,7 +135,7 @@ export default function AIWebChat() {
       console.error("💥 CLIENT: Error in handleSendMessage:", error)
 
       const errorMessage: Message = {
-        id: (Date.now() + 1).toString(),
+        id: Date.now().toString(),
         content: `🦈 **Shark 2.0 - Smart Response** 🦈\n\n**Your question:** "${message}"\n\nI'm working in smart mode and ready to help! While I may not have real-time data, I can still provide intelligent answers on many topics.\n\n**I can help with:**\n• Programming and technology\n• Indian culture and knowledge\n• Educational topics\n• Problem-solving and analysis\n• General knowledge\n\n🚀 **Try asking me about specific topics I can explain!** 🇮🇳`,
         role: "assistant",
         timestamp: new Date(),
@@ -149,8 +162,7 @@ export default function AIWebChat() {
     setMessages([
       {
         id: "1",
-        content:
-          '🚀 **Shark 2.0 - READY TO HELP!** 🚀\n\n✅ **Smart Assistant Active!**\n\nNamaste! I\'m Shark 2.0, your intelligent AI assistant from India! 🦈🇮🇳\n\n🧠 **I can help you with:**\n• **Programming & Technology** - Python, JavaScript, React, AI/ML\n• **Indian Culture & Knowledge** - Festivals, history, traditions\n• **Education & Learning** - Science, math, explanations\n• **Problem Solving** - Analysis, advice, step-by-step solutions\n• **General Knowledge** - Wide range of topics and questions\n\n🔥 **Try asking me:**\n• "Explain machine learning in simple terms"\n• "What are the major festivals in India?"\n• "Help me with Python programming"\n• "Tell me about Indian independence history"\n• "How does React work?"\n\n💪 **I\'m ready to provide detailed, intelligent answers!**\n\n*For enhanced capabilities with real-time search, add API keys for Perplexity, OpenAI, or Groq.*',
+        content: getRandomWelcomeMessage(),
         role: "assistant",
         timestamp: new Date(),
       },
@@ -164,33 +176,6 @@ export default function AIWebChat() {
     if (!newVoiceState && typeof window !== "undefined" && "speechSynthesis" in window) {
       window.speechSynthesis.cancel()
       setIsSpeaking(false)
-    }
-  }
-
-  const testAllApis = async () => {
-    try {
-      const response = await fetch("/api/test-all-apis")
-      const data = await response.json()
-
-      const testMessage: Message = {
-        id: Date.now().toString(),
-        content: `🧪 **System Test Results:**\n\n${data.status}\n\n📊 **Summary:**\n• Total Models: ${data.summary.total}\n• With API Keys: ${data.summary.withKeys}\n• Working: ${data.summary.working}\n\n✅ **Working Models:**\n${data.workingApis?.map((name: string) => `• ${name}`).join("\n") || "None currently working"}\n\n🎯 **Recommendation:** ${data.recommendation}\n\n🚀 **Status:** ${data.summary.working > 0 ? "ENHANCED AI READY!" : "Smart Assistant Mode Active"}\n\n💡 **Note:** Even without API keys, I can provide intelligent responses on many topics!`,
-        role: "assistant",
-        timestamp: new Date(),
-      }
-
-      setMessages((prev) => [...prev, testMessage])
-    } catch (error) {
-      console.error("Test failed:", error)
-
-      const fallbackMessage: Message = {
-        id: Date.now().toString(),
-        content: `🧪 **System Status** 🧪\n\n🧠 **Smart Assistant Mode Active!**\n\nI'm working in intelligent mode and ready to help with:\n\n• **Programming & Technology**\n• **Educational Topics**\n• **Indian Culture & Knowledge**\n• **Problem Solving**\n• **General Knowledge**\n\n🚀 **I can provide detailed answers even without external APIs!**\n\n💡 **For enhanced capabilities, add API keys for:**\n• Perplexity AI (real-time search)\n• OpenAI (advanced AI)\n• Groq (fast responses)\n• xAI Grok (latest AI)`,
-        role: "assistant",
-        timestamp: new Date(),
-      }
-
-      setMessages((prev) => [...prev, fallbackMessage])
     }
   }
 
@@ -252,16 +237,6 @@ export default function AIWebChat() {
               title="Voice Mode"
             >
               🎤
-            </motion.button>
-
-            <motion.button
-              onClick={testAllApis}
-              className="p-3 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors border border-blue-400/50 shadow-lg"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              title="Test System"
-            >
-              🧪
             </motion.button>
 
             {isSpeechSupported && (
