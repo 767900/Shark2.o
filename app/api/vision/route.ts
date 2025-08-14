@@ -16,54 +16,65 @@ export async function POST(request: Request) {
     // Try OpenAI Vision first
     if (process.env.OPENAI_API_KEY) {
       try {
-        const { openai } = await import("@ai-sdk/openai")
-        const { generateText } = await import("ai")
-
-        const { text } = await generateText({
-          model: openai("gpt-4o-mini"),
-          messages: [
-            {
-              role: "user",
-              content: [
-                {
-                  type: "text",
-                  text: message || "What do you see in this image? Describe it in detail.",
-                },
-                {
-                  type: "image",
-                  image: `data:${mimeType};base64,${base64}`,
-                },
-              ],
-            },
-          ],
+        const response = await fetch("https://api.openai.com/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model: "gpt-4-vision-preview",
+            messages: [
+              {
+                role: "user",
+                content: [
+                  {
+                    type: "text",
+                    text: message || "What do you see in this image? Describe it in detail.",
+                  },
+                  {
+                    type: "image_url",
+                    image_url: {
+                      url: `data:${mimeType};base64,${base64}`,
+                    },
+                  },
+                ],
+              },
+            ],
+            max_tokens: 1000,
+          }),
         })
 
-        return Response.json({
-          content: text,
-          provider: "OpenAI Vision",
-        })
+        if (response.ok) {
+          const data = await response.json()
+          return Response.json({
+            content: data.choices[0].message.content,
+            provider: "OpenAI Vision",
+          })
+        }
       } catch (error) {
         console.log("OpenAI Vision failed:", error.message)
       }
     }
 
-    // Fallback response for demo
-    const mockVisionResponses = [
-      "I can see an image has been uploaded! However, I'm currently running in demo mode. To analyze images, please add your OpenAI API key for vision capabilities.",
-      "Image received! In demo mode, I can't actually see the image content. Add an OpenAI API key to unlock real image analysis with Shark2.0! 🦈",
-      "Got your image! For real AI vision analysis, you'll need to configure an OpenAI API key. Until then, I'm swimming blind! 🦈👀",
+    // Enhanced fallback response
+    const imageAnalysisResponses = [
+      `🖼️ **Image Analysis - Shark 2.0** 🖼️\n\nI can see you've uploaded an image! While my vision capabilities are currently limited, I'm working on analyzing it for you.\n\n📸 **What I can tell you:**\n• Image received successfully\n• File type: ${mimeType}\n• Ready for analysis\n\n🔧 **For full image analysis, I need OpenAI Vision API access.**\n\nTry asking me about something else in the meantime! 🦈🇮🇳`,
+
+      `📷 **Shark 2.0 - Image Processing** 📷\n\nGreat! I've received your image. While I'm currently swimming in demo mode for image analysis, I can see that you've shared something with me!\n\n🎯 **Next Steps:**\n• Configure OpenAI API for full vision\n• I'll be able to describe, analyze, and answer questions about images\n\n💡 **In the meantime, ask me anything else!** 🦈✨`,
     ]
 
     return Response.json({
-      content: mockVisionResponses[Math.floor(Math.random() * mockVisionResponses.length)],
-      provider: "Shark2.0 Demo Vision",
+      content: imageAnalysisResponses[Math.floor(Math.random() * imageAnalysisResponses.length)],
+      provider: "Shark 2.0 Vision (Demo)",
     })
   } catch (error) {
     console.error("Vision API error:", error)
     return Response.json(
       {
         error: "Failed to process image",
-        content: "Sorry, I had trouble processing that image. Please try again! 🦈",
+        content:
+          "🦈 **Image Processing Error** 🦈\n\nSorry, I had trouble processing that image. Please try again or ask me something else! 🇮🇳",
       },
       { status: 500 },
     )

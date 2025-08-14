@@ -44,8 +44,27 @@ export default function InputBar({ inputText, setInputText, onSendMessage, isLoa
           setIsListening(false)
         }
 
-        recognitionInstance.onerror = () => {
+        recognitionInstance.onerror = (event: any) => {
+          console.log("⚠️ Voice input error:", event.error)
           setIsListening(false)
+
+          // Handle different error types gracefully
+          switch (event.error) {
+            case "no-speech":
+              // Don't show error for no-speech, just stop listening
+              break
+            case "audio-capture":
+              console.error("Microphone not accessible")
+              break
+            case "not-allowed":
+              console.error("Microphone permission denied")
+              break
+            case "network":
+              console.error("Network error during voice recognition")
+              break
+            default:
+              console.error("Voice recognition error:", event.error)
+          }
         }
 
         setRecognition(recognitionInstance)
@@ -72,12 +91,21 @@ export default function InputBar({ inputText, setInputText, onSendMessage, isLoa
     if (!recognition) return
 
     if (isListening) {
-      recognition.stop()
-      setIsListening(false)
+      try {
+        recognition.stop()
+        setIsListening(false)
+      } catch (error) {
+        console.log("Error stopping recognition:", error)
+        setIsListening(false)
+      }
     } else {
       try {
-        recognition.start()
-        setIsListening(true)
+        // Add a small delay to ensure proper state
+        setTimeout(() => {
+          if (recognition && !isListening) {
+            recognition.start()
+          }
+        }, 100)
       } catch (error) {
         console.error("Error starting speech recognition:", error)
         setIsListening(false)
