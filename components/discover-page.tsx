@@ -238,40 +238,30 @@ export default function DiscoverPage({ onBack }: DiscoverPageProps) {
         </div>
       </div>
 
-      {/* Auto-refresh Status */}
-      {isAutoRefreshing && (
-        <div className="px-4 py-2 bg-gradient-to-r from-green-900/20 to-blue-900/20 border-b border-green-700/30">
-          <div className="flex items-center gap-2 text-sm text-green-400">
-            <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-            <span>🔴 LIVE - Auto-updating with fresh news every 45 seconds</span>
-            <div className="ml-auto text-xs text-gray-400">
-              Next update in {Math.ceil((REFRESH_INTERVAL - (Date.now() - lastFetchRef.current)) / 1000)}s
-            </div>
-          </div>
+      {/* Category Tabs - Mobile Optimized */}
+      <div className="px-4 py-3 border-b border-gray-700">
+        <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-2">
+          {categories.map((category) => (
+            <Button
+              key={category}
+              onClick={() => setSelectedCategory(category)}
+              variant={selectedCategory === category ? "default" : "ghost"}
+              size="sm"
+              className={`whitespace-nowrap flex-shrink-0 min-w-fit px-4 py-2 text-sm font-medium rounded-full transition-all ${
+                selectedCategory === category
+                  ? "bg-gradient-to-r from-cyan-600 to-blue-600 text-white shadow-lg"
+                  : "text-gray-300 hover:bg-white/10 hover:text-white border border-gray-600"
+              }`}
+            >
+              {category}
+              {selectedCategory === category && (
+                <span className="ml-2 text-xs bg-white/20 px-2 py-0.5 rounded-full">
+                  {articles.filter((a) => a.category === category || category === "For You").length}
+                </span>
+              )}
+            </Button>
+          ))}
         </div>
-      )}
-
-      {/* Category Tabs */}
-      <div className="flex gap-2 p-4 overflow-x-auto">
-        {categories.map((category) => (
-          <Button
-            key={category}
-            onClick={() => setSelectedCategory(category)}
-            variant={selectedCategory === category ? "default" : "ghost"}
-            className={`whitespace-nowrap ${
-              selectedCategory === category
-                ? "bg-gradient-to-r from-cyan-600 to-blue-600 text-white hover:from-cyan-700 hover:to-blue-700"
-                : "text-gray-300 hover:bg-white/10"
-            }`}
-          >
-            {category}
-            {category === selectedCategory && (
-              <span className="ml-2 text-xs bg-white/20 px-2 py-1 rounded-full">
-                {articles.filter((a) => a.category === category || category === "For You").length}
-              </span>
-            )}
-          </Button>
-        ))}
       </div>
 
       {/* Content */}
