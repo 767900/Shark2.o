@@ -71,9 +71,11 @@ export default function MessageBubble({ message, onRelatedQuestionClick }: Messa
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
         >
-          <p className={`${isMobile ? "text-sm" : "text-sm"} leading-relaxed whitespace-pre-wrap font-mono`}>
+          <div
+            className={`${isMobile ? "text-base" : "text-lg"} leading-relaxed whitespace-pre-wrap font-semibold text-white`}
+          >
             {message.content}
-          </p>
+          </div>
 
           {/* Citations */}
           {message.citations && <Citations citations={message.citations} />}
@@ -86,15 +88,15 @@ export default function MessageBubble({ message, onRelatedQuestionClick }: Messa
           <div
             className={`flex items-center justify-between mt-3 pt-2 border-t border-current/20 ${isMobile ? "flex-col gap-2" : ""}`}
           >
-            <span className={`${isMobile ? "text-xs" : "text-xs"} opacity-70 font-mono`}>
+            <span className={`${isMobile ? "text-xs" : "text-xs"} opacity-70 font-medium`}>
               {message.timestamp.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
             </span>
             <div className={`flex items-center gap-2 ${isMobile ? "text-xs" : ""}`}>
-              {message.isVoice && <span className="text-xs opacity-70">🎤 VOICE</span>}
-              {message.hasImage && <span className="text-xs opacity-70">📸 IMAGE</span>}
+              {message.isVoice && <span className="text-xs opacity-70 font-medium">🎤 VOICE</span>}
+              {message.hasImage && <span className="text-xs opacity-70 font-medium">📸 IMAGE</span>}
               {!isUser && !isError && (
                 <span
-                  className={`${isMobile ? "text-xs" : "text-xs"} opacity-70 bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent`}
+                  className={`${isMobile ? "text-xs" : "text-xs"} opacity-70 bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent font-bold`}
                 >
                   🦈 SHARK 2.0
                 </span>

@@ -86,6 +86,11 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell", "Fira Sans",
+      "Droid Sans", "Helvetica Neue", sans-serif;
+    font-weight: 500;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 }
 
@@ -101,6 +106,37 @@ body {
 #__next,
 main {
   height: 100%;
+}
+
+/* Enhanced Typography - Perplexity Style */
+.message-text {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell", "Fira Sans",
+    "Droid Sans", "Helvetica Neue", sans-serif;
+  font-weight: 600;
+  line-height: 1.6;
+  letter-spacing: -0.01em;
+  color: #ffffff;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Bold headings and important text */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #ffffff;
+}
+
+/* Enhanced button text */
+button {
+  font-weight: 600;
+  letter-spacing: -0.01em;
 }
 
 /* Mobile optimizations */
@@ -121,7 +157,20 @@ main {
   /* Better text readability on mobile */
   .text-sm {
     font-size: 14px;
-    line-height: 1.4;
+    line-height: 1.5;
+    font-weight: 500;
+  }
+
+  .text-base {
+    font-size: 16px;
+    line-height: 1.6;
+    font-weight: 600;
+  }
+
+  .text-lg {
+    font-size: 18px;
+    line-height: 1.6;
+    font-weight: 600;
   }
 
   /* Prevent zoom on input focus */
@@ -129,6 +178,19 @@ main {
   textarea,
   select {
     font-size: 16px;
+    font-weight: 500;
+  }
+
+  /* Mobile category tabs optimization */
+  .category-tabs {
+    padding-bottom: 8px;
+  }
+
+  .category-tab {
+    min-width: fit-content;
+    padding: 8px 16px;
+    font-size: 14px;
+    font-weight: 600;
   }
 }
 
@@ -155,36 +217,6 @@ html {
   background: rgba(255, 255, 255, 0.5);
 }
 
-/* Mobile-specific improvements */
-@media (max-width: 768px) {
-  /* Better spacing for mobile */
-  .container {
-    padding-left: 0;
-    padding-right: 0;
-  }
-
-  /* Improve button accessibility */
-  button {
-    -webkit-tap-highlight-color: transparent;
-  }
-
-  /* Better modal handling on mobile */
-  .fixed {
-    position: fixed !important;
-  }
-
-  /* Mobile category tabs optimization */
-  .category-tabs {
-    padding-bottom: 8px;
-  }
-
-  .category-tab {
-    min-width: fit-content;
-    padding: 8px 16px;
-    font-size: 14px;
-  }
-}
-
 /* Hide scrollbars but keep functionality */
 .scrollbar-hide {
   -ms-overflow-style: none;
@@ -209,4 +241,29 @@ input:focus-visible,
 textarea:focus-visible {
   outline: 2px solid #3b82f6;
   outline-offset: 2px;
+}
+
+/* Enhanced text contrast and readability */
+p,
+span,
+div {
+  color: #ffffff;
+  font-weight: 500;
+}
+
+/* Strong emphasis for important text */
+strong,
+.font-bold {
+  font-weight: 700;
+  color: #ffffff;
+}
+
+/* Medium weight for secondary text */
+.font-medium {
+  font-weight: 600;
+}
+
+/* Semibold for primary text */
+.font-semibold {
+  font-weight: 700;
 }
