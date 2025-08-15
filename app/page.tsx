@@ -8,6 +8,7 @@ import VoiceSynthesizer from "@/components/voice-synthesizer"
 import SharkLogo from "@/components/shark-logo"
 import SharkLoading from "@/components/shark-loading"
 import VoiceOnlyMode from "@/components/voice-only-mode"
+import DiscoverPage from "@/components/discover-page"
 import type { Message } from "@/types/chat"
 
 const getRandomWelcomeMessage = () => {
@@ -40,6 +41,7 @@ export default function AIWebChat() {
   const [isSpeaking, setIsSpeaking] = useState(false)
   const [currentProvider, setCurrentProvider] = useState<string>("Smart Assistant Ready 🧠")
   const [isVoiceMode, setIsVoiceMode] = useState(false)
+  const [isDiscoverMode, setIsDiscoverMode] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   const scrollToBottom = () => {
@@ -269,7 +271,9 @@ export default function AIWebChat() {
           </div>
         </motion.header>
 
-        {isVoiceMode ? (
+        {isDiscoverMode ? (
+          <DiscoverPage onBack={() => setIsDiscoverMode(false)} />
+        ) : isVoiceMode ? (
           <VoiceOnlyMode onSendMessage={handleSendMessage} isLoading={isLoading} onBack={() => setIsVoiceMode(false)} />
         ) : (
           <>
@@ -289,6 +293,7 @@ export default function AIWebChat() {
               onSendMessage={handleSendMessage}
               isLoading={isLoading}
               voiceEnabled={voiceEnabled}
+              onDiscoverClick={() => setIsDiscoverMode(true)}
             />
           </>
         )}

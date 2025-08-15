@@ -4,7 +4,7 @@ import type React from "react"
 
 import { useState, useRef, useEffect } from "react"
 import { motion } from "framer-motion"
-import { Send, Mic, MicOff, ImageIcon, X } from "lucide-react"
+import { Send, Mic, MicOff, ImageIcon, X, Compass } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import ImageUpload from "@/components/image-upload"
 
@@ -14,9 +14,17 @@ interface InputBarProps {
   onSendMessage: (message: string, isVoice?: boolean, image?: File) => void
   isLoading: boolean
   voiceEnabled: boolean
+  onDiscoverClick?: () => void
 }
 
-export default function InputBar({ inputText, setInputText, onSendMessage, isLoading, voiceEnabled }: InputBarProps) {
+export default function InputBar({
+  inputText,
+  setInputText,
+  onSendMessage,
+  isLoading,
+  voiceEnabled,
+  onDiscoverClick,
+}: InputBarProps) {
   const [isListening, setIsListening] = useState(false)
   const [recognition, setRecognition] = useState<any>(null)
   const [selectedImage, setSelectedImage] = useState<File | null>(null)
@@ -179,6 +187,17 @@ export default function InputBar({ inputText, setInputText, onSendMessage, isLoa
       )}
 
       <form onSubmit={handleSubmit} className="flex items-end gap-3">
+        {/* Discover Button */}
+        <Button
+          type="button"
+          onClick={onDiscoverClick}
+          disabled={isLoading}
+          className="p-3 rounded-full bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 transition-all shadow-lg"
+          title="Discover Latest News"
+        >
+          <Compass className="w-5 h-5" />
+        </Button>
+
         {/* Image Upload Button */}
         <Button
           type="button"
