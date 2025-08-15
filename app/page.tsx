@@ -9,6 +9,7 @@ import SharkLogo from "@/components/shark-logo"
 import SharkLoading from "@/components/shark-loading"
 import VoiceOnlyMode from "@/components/voice-only-mode"
 import DiscoverPage from "@/components/discover-page"
+import ImaginePage from "@/components/imagine-page"
 import type { Message } from "@/types/chat"
 
 const getRandomWelcomeMessage = () => {
@@ -42,6 +43,7 @@ export default function AIWebChat() {
   const [currentProvider, setCurrentProvider] = useState<string>("Smart Assistant Ready 🧠")
   const [isVoiceMode, setIsVoiceMode] = useState(false)
   const [isDiscoverMode, setIsDiscoverMode] = useState(false)
+  const [isImagineMode, setIsImagineMode] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   const scrollToBottom = () => {
@@ -228,6 +230,20 @@ export default function AIWebChat() {
 
           <div className="flex items-center gap-3">
             <motion.button
+              onClick={() => setIsImagineMode(!isImagineMode)}
+              className={`p-3 rounded-lg transition-all duration-200 border border-white/20 ${
+                isImagineMode
+                  ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg animate-pulse"
+                  : "bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg hover:from-purple-700 hover:to-pink-700"
+              }`}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              title="AI Image Generation"
+            >
+              🎨
+            </motion.button>
+
+            <motion.button
               onClick={() => setIsVoiceMode(!isVoiceMode)}
               className={`p-3 rounded-lg transition-all duration-200 border border-white/20 ${
                 isVoiceMode
@@ -271,7 +287,11 @@ export default function AIWebChat() {
           </div>
         </motion.header>
 
-        {isDiscoverMode ? (
+        {isImagineMode ? (
+          <div className="flex-1 min-h-0">
+            <ImaginePage onBack={() => setIsImagineMode(false)} />
+          </div>
+        ) : isDiscoverMode ? (
           <div className="flex-1 min-h-0">
             <DiscoverPage onBack={() => setIsDiscoverMode(false)} />
           </div>
