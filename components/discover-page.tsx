@@ -192,7 +192,7 @@ export default function DiscoverPage({ onBack }: DiscoverPageProps) {
   }
 
   return (
-    <div className="flex-1 flex flex-col bg-gray-900 text-white">
+    <div className="flex-1 flex flex-col bg-gray-900 text-white max-h-screen">
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-gray-700">
         <div className="flex items-center gap-4">
@@ -275,7 +275,7 @@ export default function DiscoverPage({ onBack }: DiscoverPageProps) {
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto p-4">
+      <div className="flex-1 overflow-y-auto p-4 min-h-0">
         {error && (
           <div className="text-center text-red-400 p-8">
             <p>{error}</p>

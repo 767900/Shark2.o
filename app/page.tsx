@@ -196,7 +196,7 @@ export default function AIWebChat() {
     >
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm"></div>
 
-      <div className="container mx-auto max-w-4xl h-[100vh] flex flex-col relative z-10">
+      <div className="container mx-auto max-w-4xl h-screen flex flex-col relative z-10">
         <motion.header
           className="flex items-center justify-between p-4 border-b border-white/20 backdrop-blur-md bg-white/10"
           initial={{ opacity: 0, y: -20 }}
@@ -272,7 +272,9 @@ export default function AIWebChat() {
         </motion.header>
 
         {isDiscoverMode ? (
-          <DiscoverPage onBack={() => setIsDiscoverMode(false)} />
+          <div className="flex-1 min-h-0">
+            <DiscoverPage onBack={() => setIsDiscoverMode(false)} />
+          </div>
         ) : isVoiceMode ? (
           <VoiceOnlyMode onSendMessage={handleSendMessage} isLoading={isLoading} onBack={() => setIsVoiceMode(false)} />
         ) : (
