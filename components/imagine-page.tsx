@@ -4,7 +4,7 @@ import type React from "react"
 
 import { useState, useRef } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { ArrowLeft, Wand2, Download, Share, Copy, Sparkles, ImageIcon } from "lucide-react"
+import { ArrowLeft, Wand2, Download, Share, Copy, Sparkles, ImageIcon, ExternalLink } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 interface GeneratedImage {
@@ -70,6 +70,7 @@ export default function ImaginePage({ onBack }: ImaginePageProps) {
   const [isGenerating, setIsGenerating] = useState(false)
   const [selectedImage, setSelectedImage] = useState<GeneratedImage | null>(null)
   const [downloadingId, setDownloadingId] = useState<string | null>(null)
+  const [downloadStatus, setDownloadStatus] = useState<string>("")
   const inputRef = useRef<HTMLInputElement>(null)
 
   const handleGenerate = async () => {
@@ -157,6 +158,7 @@ export default function ImaginePage({ onBack }: ImaginePageProps) {
     if (!image.imageUrl || downloadingId === image.id) return
 
     setDownloadingId(image.id)
+    setDownloadStatus("Preparing download...")
 
     try {
       console.log("📥 Downloading image:", image.prompt)
@@ -170,7 +172,8 @@ export default function ImaginePage({ onBack }: ImaginePageProps) {
 
       const filename = `shark-ai-${cleanPrompt}-${image.id}.jpg`
 
-      // Try API download first
+      // Method 1: Try API download
+      setDownloadStatus("Downloading via API...")
       try {
         const response = await fetch("/api/download-image", {
           method: "POST",
@@ -184,27 +187,93 @@ export default function ImaginePage({ onBack }: ImaginePageProps) {
         })
 
         if (response.ok) {
+          setDownloadStatus("Processing download...")
           const blob = await response.blob()
-          const url = window.URL.createObjectURL(blob)
-          const a = document.createElement("a")
-          a.href = url
-          a.download = filename
-          document.body.appendChild(a)
-          a.click()
-          document.body.removeChild(a)
-          window.URL.revokeObjectURL(url)
-          console.log("✅ Download via API successful!")
-          return
+
+          if (blob.size > 0) {
+            const url = window.URL.createObjectURL(blob)
+            const a = document.createElement("a")
+            a.href = url
+            a.download = filename
+            a.style.display = "none"
+            document.body.appendChild(a)
+            a.click()
+            document.body.removeChild(a)
+            window.URL.revokeObjectURL(url)
+
+            setDownloadStatus("Download complete!")
+            console.log("✅ API download successful!")
+
+            setTimeout(() => setDownloadStatus(""), 2000)
+            return
+          }
+        } else {
+          const errorData = await response.json()
+          console.log("API download failed:", errorData.error)
+          throw new Error(errorData.error || "API download failed")
         }
       } catch (apiError) {
-        console.log("API download failed, trying direct method...")
+        console.log("API download failed, trying alternative methods...")
+        setDownloadStatus("Trying alternative method...")
       }
 
-      // Fallback: Direct download method
+      // Method 2: Canvas-based download (works with CORS)
       try {
-        const response = await fetch(image.imageUrl, {
-          mode: "cors",
+        setDownloadStatus("Processing image...")
+
+        const img = new Image()
+        img.crossOrigin = "anonymous"
+
+        await new Promise((resolve, reject) => {
+          img.onload = resolve
+          img.onerror = reject
+          img.src = image.imageUrl
         })
+
+        const canvas = document.createElement("canvas")
+        const ctx = canvas.getContext("2d")
+
+        canvas.width = img.naturalWidth || img.width
+        canvas.height = img.naturalHeight || img.height
+
+        ctx?.drawImage(img, 0, 0)
+
+        canvas.toBlob(
+          (blob) => {
+            if (blob) {
+              const url = window.URL.createObjectURL(blob)
+              const a = document.createElement("a")
+              a.href = url
+              a.download = filename
+              a.style.display = "none"
+              document.body.appendChild(a)
+              a.click()
+              document.body.removeChild(a)
+              window.URL.revokeObjectURL(url)
+
+              setDownloadStatus("Download complete!")
+              console.log("✅ Canvas download successful!")
+              setTimeout(() => setDownloadStatus(""), 2000)
+            } else {
+              throw new Error("Failed to create blob from canvas")
+            }
+          },
+          "image/jpeg",
+          0.9,
+        )
+
+        return
+      } catch (canvasError) {
+        console.log("Canvas download failed:", canvasError)
+        setDownloadStatus("Trying final method...")
+      }
+
+      // Method 3: Direct fetch with proxy
+      try {
+        setDownloadStatus("Fetching image...")
+
+        const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(image.imageUrl)}`
+        const response = await fetch(proxyUrl)
 
         if (response.ok) {
           const blob = await response.blob()
@@ -212,30 +281,39 @@ export default function ImaginePage({ onBack }: ImaginePageProps) {
           const a = document.createElement("a")
           a.href = url
           a.download = filename
+          a.style.display = "none"
           document.body.appendChild(a)
           a.click()
           document.body.removeChild(a)
           window.URL.revokeObjectURL(url)
-          console.log("✅ Direct download successful!")
-        } else {
-          throw new Error("Failed to fetch image")
-        }
-      } catch (directError) {
-        console.log("Direct download failed, using fallback...")
 
-        // Final fallback: Open in new tab
-        const link = document.createElement("a")
-        link.href = image.imageUrl
-        link.target = "_blank"
-        link.download = filename
-        document.body.appendChild(link)
-        link.click()
-        document.body.removeChild(link)
-        console.log("✅ Fallback download (new tab) triggered!")
+          setDownloadStatus("Download complete!")
+          console.log("✅ Proxy download successful!")
+          setTimeout(() => setDownloadStatus(""), 2000)
+          return
+        }
+      } catch (proxyError) {
+        console.log("Proxy download failed:", proxyError)
       }
+
+      // Method 4: Fallback - Open in new tab with download suggestion
+      setDownloadStatus("Opening in new tab...")
+      const link = document.createElement("a")
+      link.href = image.imageUrl
+      link.target = "_blank"
+      link.rel = "noopener noreferrer"
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+
+      setDownloadStatus("Right-click to save!")
+      setTimeout(() => setDownloadStatus(""), 3000)
+
+      console.log("✅ Fallback method - opened in new tab")
     } catch (error) {
-      console.error("❌ Download failed:", error)
-      alert("Download failed. You can right-click the image and save it manually.")
+      console.error("❌ All download methods failed:", error)
+      setDownloadStatus("Download failed - try right-click")
+      setTimeout(() => setDownloadStatus(""), 3000)
     } finally {
       setDownloadingId(null)
     }
@@ -255,6 +333,8 @@ export default function ImaginePage({ onBack }: ImaginePageProps) {
       // Fallback for older browsers
       const textArea = document.createElement("textarea")
       textArea.value = prompt
+      textArea.style.position = "fixed"
+      textArea.style.opacity = "0"
       document.body.appendChild(textArea)
       textArea.select()
       document.execCommand("copy")
@@ -311,10 +391,20 @@ export default function ImaginePage({ onBack }: ImaginePageProps) {
             <Share className="w-4 h-4" />
           </Button>
           <Button variant="ghost" size="sm" className="text-white hover:bg-white/10">
-            <Download className="w-4 h-4" />
+            <ExternalLink className="w-4 h-4" />
           </Button>
         </div>
       </div>
+
+      {/* Download Status */}
+      {downloadStatus && (
+        <div className="px-4 py-2 bg-blue-900/20 border-b border-blue-700/30">
+          <div className="flex items-center gap-2 text-sm text-blue-400">
+            <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></div>
+            <span>{downloadStatus}</span>
+          </div>
+        </div>
+      )}
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-4 min-h-0">
@@ -406,6 +496,7 @@ export default function ImaginePage({ onBack }: ImaginePageProps) {
                             variant="ghost"
                             className="bg-black/50 text-white hover:bg-black/70"
                             onClick={(e) => handleCopyPrompt(image.prompt, e)}
+                            title="Copy prompt"
                           >
                             <Copy className="w-4 h-4" />
                           </Button>
@@ -415,6 +506,7 @@ export default function ImaginePage({ onBack }: ImaginePageProps) {
                             className="bg-black/50 text-white hover:bg-black/70"
                             onClick={(e) => handleDownload(image, e)}
                             disabled={downloadingId === image.id}
+                            title="Download image"
                           >
                             {downloadingId === image.id ? (
                               <motion.div
@@ -512,7 +604,7 @@ export default function ImaginePage({ onBack }: ImaginePageProps) {
         </div>
 
         <div className="flex items-center justify-center mt-3 text-xs text-gray-500">
-          <span>✨ Powered by AI • Press Enter to generate • Click images to download</span>
+          <span>✨ Powered by AI • Press Enter to generate • Multiple download methods available</span>
         </div>
       </div>
 

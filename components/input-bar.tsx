@@ -30,7 +30,22 @@ export default function InputBar({
   const [selectedImage, setSelectedImage] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState<string | null>(null)
   const [showImageUpload, setShowImageUpload] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+
+  // Detect mobile device
+  useEffect(() => {
+    const checkMobile = () => {
+      const isMobileDevice =
+        window.innerWidth < 768 ||
+        /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+      setIsMobile(isMobileDevice)
+    }
+
+    checkMobile()
+    window.addEventListener("resize", checkMobile)
+    return () => window.removeEventListener("resize", checkMobile)
+  }, [])
 
   // Initialize speech recognition
   useEffect(() => {
@@ -142,7 +157,7 @@ export default function InputBar({
 
   return (
     <motion.div
-      className="p-4 border-t border-white/10 backdrop-blur-sm"
+      className={`${isMobile ? "p-3" : "p-4"} border-t border-white/10 backdrop-blur-sm`}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay: 0.2 }}
@@ -174,11 +189,11 @@ export default function InputBar({
           <img
             src={imagePreview || "/placeholder.svg"}
             alt="Selected"
-            className="w-16 h-16 rounded-lg object-cover border border-white/20"
+            className={`${isMobile ? "w-12 h-12" : "w-16 h-16"} rounded-lg object-cover border border-white/20`}
           />
           <div className="flex-1">
-            <p className="text-sm text-white">Image selected</p>
-            <p className="text-xs text-gray-400">{selectedImage.name}</p>
+            <p className={`${isMobile ? "text-xs" : "text-sm"} text-white`}>Image selected</p>
+            <p className={`${isMobile ? "text-xs" : "text-xs"} text-gray-400 truncate`}>{selectedImage.name}</p>
           </div>
           <Button onClick={handleImageRemove} size="sm" variant="ghost" className="text-red-400 hover:text-red-300">
             <X className="w-4 h-4" />
@@ -186,42 +201,87 @@ export default function InputBar({
         </motion.div>
       )}
 
-      <form onSubmit={handleSubmit} className="flex items-end gap-3">
-        {/* Discover Button */}
-        <Button
-          type="button"
-          onClick={onDiscoverClick}
-          disabled={isLoading}
-          className="p-3 rounded-full bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 transition-all shadow-lg"
-          title="Discover Latest News"
-        >
-          <Compass className="w-5 h-5" />
-        </Button>
+      <form onSubmit={handleSubmit} className={`flex items-end gap-${isMobile ? "2" : "3"}`}>
+        {/* Mobile: Stack buttons vertically when needed */}
+        {isMobile ? (
+          <div className="flex flex-col gap-2">
+            {/* Discover Button */}
+            <Button
+              type="button"
+              onClick={onDiscoverClick}
+              disabled={isLoading}
+              size="sm"
+              className="p-2 rounded-full bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 transition-all shadow-lg"
+              title="Discover Latest News"
+            >
+              <Compass className="w-4 h-4" />
+            </Button>
 
-        {/* Image Upload Button */}
-        <Button
-          type="button"
-          onClick={() => setShowImageUpload(!showImageUpload)}
-          disabled={isLoading}
-          className={`p-3 rounded-full transition-all ${
-            showImageUpload || selectedImage ? "bg-green-600 hover:bg-green-700" : "bg-gray-600 hover:bg-gray-700"
-          }`}
-        >
-          <ImageIcon className="w-5 h-5" />
-        </Button>
+            {/* Image Upload Button */}
+            <Button
+              type="button"
+              onClick={() => setShowImageUpload(!showImageUpload)}
+              disabled={isLoading}
+              size="sm"
+              className={`p-2 rounded-full transition-all ${
+                showImageUpload || selectedImage ? "bg-green-600 hover:bg-green-700" : "bg-gray-600 hover:bg-gray-700"
+              }`}
+            >
+              <ImageIcon className="w-4 h-4" />
+            </Button>
 
-        {/* Voice Input Button */}
-        {recognition && (
-          <Button
-            type="button"
-            onClick={toggleVoiceInput}
-            disabled={isLoading}
-            className={`p-3 rounded-full transition-all ${
-              isListening ? "bg-red-600 hover:bg-red-700 animate-pulse" : "bg-blue-600 hover:bg-blue-700"
-            }`}
-          >
-            {isListening ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
-          </Button>
+            {/* Voice Input Button */}
+            {recognition && (
+              <Button
+                type="button"
+                onClick={toggleVoiceInput}
+                disabled={isLoading}
+                size="sm"
+                className={`p-2 rounded-full transition-all ${
+                  isListening ? "bg-red-600 hover:bg-red-700 animate-pulse" : "bg-blue-600 hover:bg-blue-700"
+                }`}
+              >
+                {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+              </Button>
+            )}
+          </div>
+        ) : (
+          <>
+            {/* Desktop: Horizontal layout */}
+            <Button
+              type="button"
+              onClick={onDiscoverClick}
+              disabled={isLoading}
+              className="p-3 rounded-full bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 transition-all shadow-lg"
+              title="Discover Latest News"
+            >
+              <Compass className="w-5 h-5" />
+            </Button>
+
+            <Button
+              type="button"
+              onClick={() => setShowImageUpload(!showImageUpload)}
+              disabled={isLoading}
+              className={`p-3 rounded-full transition-all ${
+                showImageUpload || selectedImage ? "bg-green-600 hover:bg-green-700" : "bg-gray-600 hover:bg-gray-700"
+              }`}
+            >
+              <ImageIcon className="w-5 h-5" />
+            </Button>
+
+            {recognition && (
+              <Button
+                type="button"
+                onClick={toggleVoiceInput}
+                disabled={isLoading}
+                className={`p-3 rounded-full transition-all ${
+                  isListening ? "bg-red-600 hover:bg-red-700 animate-pulse" : "bg-blue-600 hover:bg-blue-700"
+                }`}
+              >
+                {isListening ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
+              </Button>
+            )}
+          </>
         )}
 
         {/* Text Input */}
@@ -235,7 +295,9 @@ export default function InputBar({
               isListening ? "Listening..." : selectedImage ? "Ask about the image..." : "Chat with Shark2.0..."
             }
             disabled={isLoading || isListening}
-            className="w-full bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl px-4 py-3 text-white placeholder-gray-400 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent max-h-32 min-h-[48px]"
+            className={`w-full bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl ${
+              isMobile ? "px-3 py-2 text-sm" : "px-4 py-3"
+            } text-white placeholder-gray-400 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent max-h-32 min-h-[${isMobile ? "40px" : "48px"}]`}
             rows={1}
           />
         </div>
@@ -244,14 +306,16 @@ export default function InputBar({
         <Button
           type="submit"
           disabled={(!inputText.trim() && !selectedImage) || isLoading || isListening}
-          className="p-3 rounded-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+          className={`${
+            isMobile ? "p-2" : "p-3"
+          } rounded-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all`}
         >
-          <Send className="w-5 h-5" />
+          <Send className={`${isMobile ? "w-4 h-4" : "w-5 h-5"}`} />
         </Button>
       </form>
 
       {/* Status Indicators */}
-      <div className="flex items-center justify-between mt-2 text-xs text-gray-400">
+      <div className={`flex items-center justify-between mt-2 ${isMobile ? "text-xs" : "text-xs"} text-gray-400`}>
         <div className="flex items-center gap-4">
           {isListening && (
             <span className="flex items-center gap-1 text-red-400">
@@ -265,9 +329,9 @@ export default function InputBar({
               Image ready
             </span>
           )}
-          {voiceEnabled && <span className="flex items-center gap-1 text-blue-400">🔊 Voice output enabled</span>}
+          {voiceEnabled && <span className="flex items-center gap-1 text-blue-400">🔊 Voice enabled</span>}
         </div>
-        <span>Press Enter to send, Shift+Enter for new line</span>
+        {!isMobile && <span>Press Enter to send, Shift+Enter for new line</span>}
       </div>
     </motion.div>
   )
