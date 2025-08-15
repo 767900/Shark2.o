@@ -86,6 +86,10 @@ export default function AIWebChat() {
     setInputText("")
     setIsLoading(true)
 
+    // Clear any previous speech when sending new message
+    setLastAiMessage("")
+    setIsSpeaking(false)
+
     try {
       console.log("🚀 CLIENT: Sending message to Shark 2.0:", message)
 
@@ -147,9 +151,19 @@ export default function AIWebChat() {
 
       setMessages((prev) => [...prev, aiMessage])
 
-      // Voice output
-      if ((voiceEnabled || isVoice) && data.content) {
-        setLastAiMessage(data.content)
+      // Voice output - ONLY when voice output toggle is enabled
+      // This applies to chat section only, voice mode is handled separately
+      if (voiceEnabled && data.content && !isVoiceMode) {
+        console.log("🔊 Voice output enabled - preparing to speak response")
+        // Small delay to ensure message is rendered first
+        setTimeout(() => {
+          const textToSpeak = data.content.trim()
+          if (textToSpeak) {
+            setLastAiMessage(textToSpeak)
+          }
+        }, 300)
+      } else {
+        console.log("🔇 Voice output disabled - text only response")
       }
     } catch (error) {
       console.error("💥 CLIENT: Error in handleSendMessage:", error)
@@ -162,6 +176,15 @@ export default function AIWebChat() {
         isError: false,
       }
       setMessages((prev) => [...prev, errorMessage])
+
+      // Voice output for error messages - ONLY when voice output toggle is enabled
+      if (voiceEnabled && !isVoiceMode) {
+        setTimeout(() => {
+          setLastAiMessage(
+            "I'm working in smart mode and ready to help! Try asking me about specific topics I can explain.",
+          )
+        }, 300)
+      }
     } finally {
       setIsLoading(false)
     }
@@ -193,10 +216,14 @@ export default function AIWebChat() {
     const newVoiceState = !voiceEnabled
     setVoiceEnabled(newVoiceState)
 
+    // If turning off voice, stop any current speech
     if (!newVoiceState && typeof window !== "undefined" && "speechSynthesis" in window) {
       window.speechSynthesis.cancel()
       setIsSpeaking(false)
+      setLastAiMessage("")
     }
+
+    console.log(`🔊 Voice output ${newVoiceState ? "ENABLED" : "DISABLED"}`)
   }
 
   const isSpeechSupported = typeof window !== "undefined" && "speechSynthesis" in window
@@ -362,6 +389,7 @@ export default function AIWebChat() {
                   🎯 {currentProvider}
                   {isSpeaking && " • 🔊 Speaking"}
                   {isLoading && " • 🔄 Processing..."}
+                  {voiceEnabled ? " • 🔊 Voice ON" : " • 🔇 Voice OFF"}
                 </p>
               )}
             </div>
@@ -410,7 +438,7 @@ export default function AIWebChat() {
                   }`}
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  title="Toggle Voice Output"
+                  title={`Voice Output: ${voiceEnabled ? "ON" : "OFF"}`}
                 >
                   {voiceEnabled ? "🔊" : "🔇"}
                 </motion.button>
@@ -460,6 +488,7 @@ export default function AIWebChat() {
               🎯 {currentProvider}
               {isSpeaking && " • 🔊 Speaking"}
               {isLoading && " • 🔄 Processing..."}
+              {voiceEnabled ? " • 🔊 Voice ON" : " • 🔇 Voice OFF"}
             </p>
           </div>
         )}
@@ -497,7 +526,8 @@ export default function AIWebChat() {
           </>
         )}
 
-        {isSpeechSupported && (
+        {/* Voice Synthesizer - Only active when voice is enabled and not in voice mode */}
+        {isSpeechSupported && !isVoiceMode && (
           <VoiceSynthesizer
             text={lastAiMessage}
             isEnabled={voiceEnabled}
