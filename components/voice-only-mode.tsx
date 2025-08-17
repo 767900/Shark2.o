@@ -18,52 +18,62 @@ export default function VoiceOnlyMode({ onSendMessage, isLoading, onBack }: Voic
   const [transcript, setTranscript] = useState("")
   const [status, setStatus] = useState("Tap the Indian flag to start voice conversation")
   const [isProcessing, setIsProcessing] = useState(false)
-  const [isSupported, setIsSupported] = useState(false)
-  const [permissionGranted, setPermissionGranted] = useState(false)
+  const [isSupported, setIsSupported] = useState<boolean | null>(null)
+  const [permissionGranted, setPermissionGranted] = useState<boolean | null>(null)
   const [lastResponse, setLastResponse] = useState("")
+  const [isInitializing, setIsInitializing] = useState(true)
   const recognitionRef = useRef<any>(null)
   const utteranceRef = useRef<any>(null)
   const isSpeakingRef = useRef(false)
   const isListeningRef = useRef(false)
+  const speechQueueRef = useRef<string[]>([])
+  const currentChunkRef = useRef(0)
 
-  // Initialize speech recognition with better setup
+  // Fast initialization - removed delays
   useEffect(() => {
     const initializeVoiceRecognition = async () => {
       if (typeof window === "undefined") return
 
-      // Check for speech recognition support
+      console.log("🚀 Fast voice system initialization...")
+      setStatus("🔄 Initializing...")
+
+      // Check for speech recognition support immediately
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
 
       if (!SpeechRecognition) {
+        console.log("❌ Speech recognition not supported")
         setIsSupported(false)
+        setIsInitializing(false)
         setStatus("Speech recognition not supported in this browser")
         return
       }
 
+      console.log("✅ Speech recognition API found")
+      setStatus("🎤 Getting microphone access...")
+
       try {
-        // Request microphone permission first
+        // Fast permission request
         console.log("🎤 Requesting microphone permission...")
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-        stream.getTracks().forEach((track) => track.stop()) // Stop the stream, we just needed permission
+        stream.getTracks().forEach((track) => track.stop())
         setPermissionGranted(true)
         console.log("✅ Microphone permission granted!")
 
-        // Create recognition instance
+        // Create recognition instance immediately
         const recognitionInstance = new SpeechRecognition()
 
-        // Enhanced recognition settings for better accuracy
+        // Optimized recognition settings for speed
         recognitionInstance.continuous = false
-        recognitionInstance.interimResults = true // Enable interim results for better feedback
+        recognitionInstance.interimResults = true
         recognitionInstance.lang = "en-US"
 
-        // Only set maxAlternatives if supported
         if ("maxAlternatives" in recognitionInstance) {
-          recognitionInstance.maxAlternatives = 3
+          recognitionInstance.maxAlternatives = 1 // Reduced for speed
         }
 
-        // Event handlers
+        // Fast event handlers
         recognitionInstance.onstart = () => {
-          console.log("🎤 Voice recognition started successfully")
+          console.log("🎤 Voice recognition started")
           isListeningRef.current = true
           setIsListening(true)
           setStatus("🎤 Listening... speak now!")
@@ -71,12 +81,11 @@ export default function VoiceOnlyMode({ onSendMessage, isLoading, onBack }: Voic
         }
 
         recognitionInstance.onresult = (event: any) => {
-          console.log("🎯 Voice recognition result received")
+          console.log("🎯 Voice result received")
 
           let interimTranscript = ""
           let finalTranscript = ""
 
-          // Process all results
           for (let i = event.resultIndex; i < event.results.length; i++) {
             const result = event.results[i]
             const transcript = result[0].transcript
@@ -86,17 +95,14 @@ export default function VoiceOnlyMode({ onSendMessage, isLoading, onBack }: Voic
               console.log("✅ Final transcript:", transcript)
             } else {
               interimTranscript += transcript
-              console.log("⏳ Interim transcript:", transcript)
             }
           }
 
-          // Show interim results for user feedback
           if (interimTranscript) {
             setTranscript(interimTranscript)
             setStatus(`🎤 Hearing: "${interimTranscript}"`)
           }
 
-          // Process final result
           if (finalTranscript.trim()) {
             const cleanTranscript = finalTranscript.trim()
             console.log("🎯 Processing final transcript:", cleanTranscript)
@@ -106,10 +112,8 @@ export default function VoiceOnlyMode({ onSendMessage, isLoading, onBack }: Voic
             setIsListening(false)
             isListeningRef.current = false
 
-            // Process the voice query
-            setTimeout(() => {
-              handleVoiceQuery(cleanTranscript)
-            }, 500)
+            // Process immediately - no delay
+            handleVoiceQuery(cleanTranscript)
           }
         }
 
@@ -120,7 +124,7 @@ export default function VoiceOnlyMode({ onSendMessage, isLoading, onBack }: Voic
 
         recognitionInstance.onspeechend = () => {
           console.log("🔇 Speech ended")
-          setStatus("🔄 Processing what you said...")
+          setStatus("🔄 Processing...")
         }
 
         recognitionInstance.onend = () => {
@@ -138,46 +142,39 @@ export default function VoiceOnlyMode({ onSendMessage, isLoading, onBack }: Voic
           isListeningRef.current = false
           setIsListening(false)
 
-          // Handle different error types with helpful messages
           switch (event.error) {
             case "no-speech":
-              setStatus("🔇 No speech detected. Speak louder and try again!")
+              setStatus("🔇 No speech detected. Speak louder!")
               break
             case "audio-capture":
-              setStatus("🎤 Microphone issue. Check your microphone and try again!")
+              setStatus("🎤 Microphone issue. Check your microphone!")
               break
             case "not-allowed":
-              setStatus("🚫 Microphone permission denied. Please allow microphone access!")
+              setStatus("🚫 Microphone permission denied!")
               setPermissionGranted(false)
               break
             case "network":
-              setStatus("🌐 Network error. Check your connection and try again!")
-              break
-            case "aborted":
-              setStatus("⏹️ Voice recognition stopped. Tap flag to restart!")
-              break
-            case "language-not-supported":
-              setStatus("🌍 Language not supported. Using English by default.")
-              break
-            case "service-not-allowed":
-              setStatus("🔒 Voice service not allowed. Try refreshing the page!")
+              setStatus("🌐 Network error. Check connection!")
               break
             default:
-              setStatus(`❌ Voice error: ${event.error}. Tap flag to retry!`)
+              setStatus(`❌ Voice error: ${event.error}. Try again!`)
           }
         }
 
         recognitionRef.current = recognitionInstance
         setRecognition(recognitionInstance)
         setIsSupported(true)
-        setStatus("✅ Ready! Tap the Indian flag to start voice chat")
+        setPermissionGranted(true)
+        setIsInitializing(false)
+        setStatus("✅ Ready! Tap the Indian flag to start")
 
-        console.log("🎤 Voice recognition initialized successfully!")
+        console.log("🎤 Voice recognition ready!")
       } catch (error) {
-        console.error("❌ Failed to initialize voice recognition:", error)
+        console.error("❌ Failed to initialize voice:", error)
         setPermissionGranted(false)
-        setIsSupported(true) // Still supported, just no permission
-        setStatus("🎤 Microphone permission required. Please allow access!")
+        setIsSupported(true)
+        setIsInitializing(false)
+        setStatus("🎤 Microphone permission required!")
       }
     }
 
@@ -203,19 +200,18 @@ export default function VoiceOnlyMode({ onSendMessage, isLoading, onBack }: Voic
   const handleVoiceQuery = async (query: string) => {
     try {
       setIsProcessing(true)
-      setStatus("🤖 Shark 2.0 is thinking...")
+      setStatus("🤖 Shark 2.0 thinking...")
 
-      console.log("🚀 Sending voice query to AI:", query)
+      console.log("🚀 Sending voice query:", query)
 
-      // Enhanced fetch with better error handling for mobile
+      // Faster API call with reduced timeout
       const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), 30000) // 30 second timeout
+      const timeoutId = setTimeout(() => controller.abort(), 15000) // Reduced from 30s to 15s
 
       const response = await fetch("/api/voice", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "User-Agent": "Shark2.0-Mobile/1.0",
         },
         body: JSON.stringify({
           message: query,
@@ -232,46 +228,72 @@ export default function VoiceOnlyMode({ onSendMessage, isLoading, onBack }: Voic
         console.log("✅ AI response received:", aiResponse.substring(0, 100) + "...")
         setLastResponse(aiResponse)
 
-        setStatus("🔊 Shark 2.0 is speaking...")
-        speakResponse(aiResponse)
+        setStatus("🔊 Shark 2.0 speaking...")
+        // Start speaking immediately
+        speakSmoothResponse(aiResponse)
       } else {
         const errorText = await response.text()
         console.error("❌ API response error:", response.status, errorText)
-        setStatus("❌ API error. Tap flag to try again!")
+        setStatus("❌ API error. Try again!")
         setIsProcessing(false)
       }
     } catch (error) {
       console.error("💥 Voice query error:", error)
       if (error.name === "AbortError") {
-        setStatus("⏰ Request timeout. Check your connection and try again!")
+        setStatus("⏰ Request timeout. Try again!")
       } else {
-        setStatus("❌ Connection error. Tap flag to retry!")
+        setStatus("❌ Connection error. Try again!")
       }
       setIsProcessing(false)
     }
   }
 
-  const speakResponse = (text: string) => {
+  // Optimized smooth speech synthesis - NO PAUSES between chunks
+  const speakSmoothResponse = (text: string) => {
     if (!text || typeof window === "undefined" || !("speechSynthesis" in window)) {
       setStatus("❌ Speech synthesis not available")
       setIsProcessing(false)
       return
     }
 
-    // Clean text by removing emojis and special characters for speech
+    // Enhanced text cleaning for smooth speech
     const cleanTextForSpeech = (text: string) => {
-      return text
-        .replace(
-          /[\u{1F600}-\u{1F64F}]|[\u{1F300}-\u{1F5FF}]|[\u{1F680}-\u{1F6FF}]|[\u{1F1E0}-\u{1F1FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/gu,
-          "",
-        ) // Remove emojis
-        .replace(/\*\*(.*?)\*\*/g, "$1") // Remove markdown bold
-        .replace(/\*(.*?)\*/g, "$1") // Remove markdown italic
-        .replace(/#{1,6}\s/g, "") // Remove markdown headers
-        .replace(/•/g, "") // Remove bullet points
-        .replace(/🦈|🇮🇳|🚀|✅|🧠|💻|📚|🎯|🔥|💪|🌟/g, "") // Remove specific emojis
-        .replace(/\s+/g, " ") // Replace multiple spaces with single space
-        .trim()
+      return (
+        text
+          .replace(
+            /[\u{1F600}-\u{1F64F}]|[\u{1F300}-\u{1F5FF}]|[\u{1F680}-\u{1F6FF}]|[\u{1F1E0}-\u{1F1FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/gu,
+            "",
+          )
+          .replace(/\*\*(.*?)\*\*/g, "$1")
+          .replace(/\*(.*?)\*/g, "$1")
+          .replace(/#{1,6}\s/g, "")
+          .replace(/```[\s\S]*?```/g, "code block")
+          .replace(/`([^`]+)`/g, "$1")
+          .replace(/•/g, "")
+          // Technical term pronunciation fixes
+          .replace(/embedded/gi, "embedded")
+          .replace(/system/gi, "system")
+          .replace(/microcontroller/gi, "micro controller")
+          .replace(/IoT/gi, "I O T")
+          .replace(/CPU/gi, "C P U")
+          .replace(/RAM/gi, "R A M")
+          .replace(/ROM/gi, "R O M")
+          .replace(/API/gi, "A P I")
+          .replace(/USB/gi, "U S B")
+          .replace(/GPIO/gi, "G P I O")
+          .replace(/PWM/gi, "P W M")
+          .replace(/ADC/gi, "A D C")
+          .replace(/UART/gi, "U A R T")
+          .replace(/SPI/gi, "S P I")
+          .replace(/I2C/gi, "I two C")
+          .replace(/\n+/g, ". ")
+          .replace(/\s+/g, " ")
+          .replace(/\.\s*\./g, ".")
+          .replace(/\s*,\s*/g, ", ")
+          .replace(/\s*!\s*/g, "! ")
+          .replace(/\s*\?\s*/g, "? ")
+          .trim()
+      )
     }
 
     const speechText = cleanTextForSpeech(text)
@@ -282,79 +304,120 @@ export default function VoiceOnlyMode({ onSendMessage, isLoading, onBack }: Voic
       utteranceRef.current = null
     }
 
-    // Wait for speech synthesis to be ready
-    const speak = () => {
-      try {
-        const utterance = new SpeechSynthesisUtterance(speechText)
-        utteranceRef.current = utterance
-        isSpeakingRef.current = true
+    // OPTIMIZED: Use larger chunks for smoother speech - NO PAUSES
+    const maxChunkLength = 500 // Increased chunk size for smoother flow
+    const sentences = speechText.split(/[.!?]+/).filter((s) => s.trim().length > 0)
+    const chunks: string[] = []
+    let currentChunk = ""
 
-        // Optimized voice settings for mobile
-        utterance.rate = 0.9
-        utterance.pitch = 1.0
-        utterance.volume = 1.0
-        utterance.lang = "en-US"
-
-        // Try to select a female voice if available
-        const voices = window.speechSynthesis.getVoices()
-        const femaleVoice = voices.find(
-          (voice) =>
-            voice.lang.startsWith("en") &&
-            (voice.name.toLowerCase().includes("female") ||
-              voice.name.toLowerCase().includes("woman") ||
-              voice.name.toLowerCase().includes("samantha") ||
-              voice.name.toLowerCase().includes("karen")),
-        )
-        if (femaleVoice) {
-          utterance.voice = femaleVoice
+    for (const sentence of sentences) {
+      const trimmedSentence = sentence.trim()
+      if (currentChunk.length + trimmedSentence.length + 2 <= maxChunkLength) {
+        currentChunk += (currentChunk ? ". " : "") + trimmedSentence
+      } else {
+        if (currentChunk) {
+          chunks.push(currentChunk + ".")
         }
-
-        utterance.onstart = () => {
-          console.log("🔊 Speech synthesis started")
-          setIsSpeaking(true)
-          setIsProcessing(false)
-          setStatus("🔊 Shark 2.0 is speaking... (tap to stop)")
-        }
-
-        utterance.onend = () => {
-          console.log("🔇 Speech synthesis ended")
-          if (isSpeakingRef.current) {
-            setIsSpeaking(false)
-            setIsProcessing(false)
-            setStatus("✅ Done! Tap Indian flag for next question")
-            setTranscript("")
-            utteranceRef.current = null
-            isSpeakingRef.current = false
-          }
-        }
-
-        utterance.onerror = (event) => {
-          console.log("⚠️ Speech synthesis error:", event.error)
-          if (isSpeakingRef.current) {
-            setIsSpeaking(false)
-            setIsProcessing(false)
-            setStatus("❌ Speech error. Tap flag to try again!")
-            utteranceRef.current = null
-            isSpeakingRef.current = false
-          }
-        }
-
-        console.log("🎵 Starting speech synthesis...")
-        window.speechSynthesis.speak(utterance)
-      } catch (error) {
-        console.error("❌ Error creating speech:", error)
-        setIsSpeaking(false)
-        setIsProcessing(false)
-        setStatus("❌ Speech error. Tap flag to try again!")
+        currentChunk = trimmedSentence
       }
     }
 
-    // Ensure speech synthesis is ready
-    if (window.speechSynthesis.pending || window.speechSynthesis.speaking) {
-      window.speechSynthesis.cancel()
-      setTimeout(speak, 200)
-    } else {
-      speak()
+    if (currentChunk) {
+      chunks.push(currentChunk + ".")
+    }
+
+    console.log("🔊 Smooth speech: Split into", chunks.length, "chunks")
+
+    speechQueueRef.current = chunks
+    currentChunkRef.current = 0
+    isSpeakingRef.current = true
+
+    // Start speaking immediately with NO delays
+    speakNextChunkSmooth()
+  }
+
+  // SMOOTH chunk speaking with NO pauses
+  const speakNextChunkSmooth = () => {
+    if (currentChunkRef.current >= speechQueueRef.current.length || !isSpeakingRef.current) {
+      console.log("🔇 Finished speaking smoothly")
+      setIsSpeaking(false)
+      setIsProcessing(false)
+      setStatus("✅ Done! Tap Indian flag for next question")
+      setTranscript("")
+      utteranceRef.current = null
+      isSpeakingRef.current = false
+      return
+    }
+
+    const chunk = speechQueueRef.current[currentChunkRef.current]
+    console.log(
+      `🔊 Speaking smooth chunk ${currentChunkRef.current + 1}/${speechQueueRef.current.length}:`,
+      chunk.substring(0, 80) + "...",
+    )
+
+    const utterance = new SpeechSynthesisUtterance(chunk)
+    utteranceRef.current = utterance
+
+    // Optimized voice settings for smooth continuous speech
+    utterance.rate = 0.85 // Slightly faster for smoother flow
+    utterance.pitch = 1.1
+    utterance.volume = 1.0
+    utterance.lang = "en-US"
+
+    // Quick voice selection
+    const voices = window.speechSynthesis.getVoices()
+    const femaleVoice = voices.find(
+      (voice) =>
+        voice.lang.startsWith("en") &&
+        (voice.name.toLowerCase().includes("female") ||
+          voice.name.toLowerCase().includes("samantha") ||
+          voice.name.toLowerCase().includes("karen")),
+    )
+    if (femaleVoice) {
+      utterance.voice = femaleVoice
+    }
+
+    utterance.onstart = () => {
+      if (currentChunkRef.current === 0) {
+        console.log("🔊 Smooth speech started")
+        setIsSpeaking(true)
+        setIsProcessing(false)
+        setStatus("🔊 Shark 2.0 speaking... (tap to stop)")
+      }
+      console.log(`▶️ Started smooth chunk ${currentChunkRef.current + 1}`)
+    }
+
+    utterance.onend = () => {
+      console.log(`✅ Finished smooth chunk ${currentChunkRef.current + 1}`)
+      utteranceRef.current = null
+      currentChunkRef.current++
+
+      // CRITICAL: NO setTimeout delay - speak next chunk immediately
+      speakNextChunkSmooth()
+    }
+
+    utterance.onerror = (event) => {
+      console.log(`⚠️ Smooth speech error in chunk ${currentChunkRef.current + 1}:`, event.error)
+      if (event.error !== "interrupted" && event.error !== "cancelled") {
+        currentChunkRef.current++
+        // Continue immediately on error - NO delay
+        speakNextChunkSmooth()
+      } else {
+        setIsSpeaking(false)
+        setIsProcessing(false)
+        setStatus("⏹️ Speech stopped. Tap flag to continue.")
+        utteranceRef.current = null
+        isSpeakingRef.current = false
+      }
+    }
+
+    try {
+      window.speechSynthesis.speak(utterance)
+    } catch (error) {
+      console.error(`❌ Error speaking smooth chunk ${currentChunkRef.current + 1}:`, error)
+      currentChunkRef.current++
+      // Continue immediately on error - NO delay
+      speakNextChunkSmooth()
     }
   }
 
@@ -367,7 +430,7 @@ export default function VoiceOnlyMode({ onSendMessage, isLoading, onBack }: Voic
       isProcessing ||
       !permissionGranted
     ) {
-      console.log("❌ Cannot start listening - conditions not met")
+      console.log("❌ Cannot start listening")
       if (!permissionGranted) {
         setStatus("🎤 Microphone permission required!")
       }
@@ -376,20 +439,18 @@ export default function VoiceOnlyMode({ onSendMessage, isLoading, onBack }: Voic
 
     try {
       console.log("🎯 Starting voice recognition...")
-      setStatus("🎤 Starting... get ready to speak!")
+      setStatus("🎤 Starting...")
       setTranscript("")
 
-      // Small delay to ensure proper state management
-      setTimeout(() => {
-        if (recognitionRef.current && !isListeningRef.current) {
-          try {
-            recognitionRef.current.start()
-          } catch (error) {
-            console.error("❌ Error starting recognition:", error)
-            setStatus("❌ Error starting voice. Try again!")
-          }
+      // Start immediately - NO delay
+      if (recognitionRef.current && !isListeningRef.current) {
+        try {
+          recognitionRef.current.start()
+        } catch (error) {
+          console.error("❌ Error starting recognition:", error)
+          setStatus("❌ Error starting voice. Try again!")
         }
-      }, 200)
+      }
     } catch (error) {
       console.error("❌ Error in startListening:", error)
       setStatus("❌ Voice error. Try again!")
@@ -424,6 +485,8 @@ export default function VoiceOnlyMode({ onSendMessage, isLoading, onBack }: Voic
       setIsProcessing(false)
       setStatus("⏹️ Speech stopped. Tap flag to continue.")
       utteranceRef.current = null
+      speechQueueRef.current = []
+      currentChunkRef.current = 0
     }
   }
 
@@ -435,12 +498,37 @@ export default function VoiceOnlyMode({ onSendMessage, isLoading, onBack }: Voic
     } else if (!isProcessing && permissionGranted) {
       startListening()
     } else if (!permissionGranted) {
-      // Try to request permission again
       window.location.reload()
     }
   }
 
-  if (!isSupported) {
+  // Fast loading screen - reduced animation time
+  if (isInitializing || isSupported === null) {
+    return (
+      <div className="flex-1 flex items-center justify-center p-8">
+        <div className="text-center text-white">
+          <div className="mb-6">
+            <motion.div
+              className="w-16 h-16 mx-auto text-cyan-400"
+              animate={{ rotate: 360 }}
+              transition={{ duration: 1, repeat: Number.POSITIVE_INFINITY, ease: "linear" }} // Faster rotation
+            >
+              🇮🇳
+            </motion.div>
+          </div>
+          <h2 className="text-2xl mb-4">🎤 Initializing Voice Mode</h2>
+          <p className="mb-4 text-white/70">{status}</p>
+          <div className="flex items-center justify-center gap-2 text-sm text-white/50">
+            <div className="w-2 h-2 bg-cyan-400 rounded-full animate-pulse"></div>
+            <span>Fast setup in progress...</span>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Show not supported screen
+  if (isSupported === false) {
     return (
       <div className="flex-1 flex items-center justify-center p-8">
         <div className="text-center text-white">
@@ -455,7 +543,8 @@ export default function VoiceOnlyMode({ onSendMessage, isLoading, onBack }: Voic
     )
   }
 
-  if (!permissionGranted) {
+  // Show permission required screen
+  if (permissionGranted === false) {
     return (
       <div className="flex-1 flex items-center justify-center p-8">
         <div className="text-center text-white">
@@ -475,6 +564,7 @@ export default function VoiceOnlyMode({ onSendMessage, isLoading, onBack }: Voic
     )
   }
 
+  // Main voice interface
   return (
     <div className="flex-1 flex flex-col">
       {/* Header */}
@@ -486,7 +576,7 @@ export default function VoiceOnlyMode({ onSendMessage, isLoading, onBack }: Voic
           </Button>
           <div>
             <h2 className="text-xl font-bold text-white">🇮🇳 Voice Mode</h2>
-            <p className="text-sm text-white/70">Enhanced voice conversation with Shark 2.0</p>
+            <p className="text-sm text-white/70">Fast voice conversation with Shark 2.0</p>
           </div>
         </div>
       </div>
@@ -502,7 +592,7 @@ export default function VoiceOnlyMode({ onSendMessage, isLoading, onBack }: Voic
               scale: isListening ? [1, 1.3, 1] : isSpeaking ? [1, 1.2, 1] : isProcessing ? [1, 1.1, 1] : 1,
               opacity: isListening || isSpeaking || isProcessing ? [0.2, 0.6, 0.2] : 0.1,
             }}
-            transition={{ duration: 1.5, repeat: Number.POSITIVE_INFINITY }}
+            transition={{ duration: 1, repeat: Number.POSITIVE_INFINITY }} // Faster animation
             style={{
               width: "320px",
               height: "320px",
@@ -530,8 +620,8 @@ export default function VoiceOnlyMode({ onSendMessage, isLoading, onBack }: Voic
               rotate: 360,
             }}
             transition={{
-              borderColor: { duration: 3, repeat: Number.POSITIVE_INFINITY },
-              rotate: { duration: 10, repeat: Number.POSITIVE_INFINITY, ease: "linear" },
+              borderColor: { duration: 2, repeat: Number.POSITIVE_INFINITY }, // Faster color change
+              rotate: { duration: 8, repeat: Number.POSITIVE_INFINITY, ease: "linear" }, // Faster rotation
             }}
           />
 
@@ -541,7 +631,7 @@ export default function VoiceOnlyMode({ onSendMessage, isLoading, onBack }: Voic
             animate={{
               scale: isListening ? [1, 1.05, 1] : isSpeaking ? [1, 1.03, 1] : 1,
             }}
-            transition={{ duration: 1, repeat: Number.POSITIVE_INFINITY }}
+            transition={{ duration: 0.8, repeat: Number.POSITIVE_INFINITY }} // Faster pulse
           />
 
           {/* Main circle with Indian flag */}
@@ -574,8 +664,8 @@ export default function VoiceOnlyMode({ onSendMessage, isLoading, onBack }: Voic
                       ],
             }}
             transition={{
-              scale: { duration: 1, repeat: Number.POSITIVE_INFINITY },
-              boxShadow: { duration: 2, repeat: Number.POSITIVE_INFINITY },
+              scale: { duration: 0.8, repeat: Number.POSITIVE_INFINITY }, // Faster pulse
+              boxShadow: { duration: 1.5, repeat: Number.POSITIVE_INFINITY }, // Faster glow
             }}
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
@@ -588,8 +678,8 @@ export default function VoiceOnlyMode({ onSendMessage, isLoading, onBack }: Voic
                 rotate: isProcessing ? [0, 5, -5, 0] : 0,
               }}
               transition={{
-                scale: { duration: 1.5, repeat: Number.POSITIVE_INFINITY },
-                rotate: { duration: 2, repeat: Number.POSITIVE_INFINITY },
+                scale: { duration: 1, repeat: Number.POSITIVE_INFINITY }, // Faster scale
+                rotate: { duration: 1.5, repeat: Number.POSITIVE_INFINITY }, // Faster rotation
               }}
             >
               🇮🇳
@@ -619,10 +709,10 @@ export default function VoiceOnlyMode({ onSendMessage, isLoading, onBack }: Voic
                     height: [8, Math.random() * 50 + 25, 8],
                   }}
                   transition={{
-                    duration: 0.6,
+                    duration: 0.4, // Faster wave animation
                     repeat: Number.POSITIVE_INFINITY,
                     repeatType: "reverse",
-                    delay: i * 0.05,
+                    delay: i * 0.03, // Faster wave propagation
                   }}
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
@@ -653,9 +743,9 @@ export default function VoiceOnlyMode({ onSendMessage, isLoading, onBack }: Voic
                     scale: [0, 1, 0],
                   }}
                   transition={{
-                    duration: 2,
+                    duration: 1.5, // Faster particle animation
                     repeat: Number.POSITIVE_INFINITY,
-                    delay: i * 0.2,
+                    delay: i * 0.15, // Faster particle sequence
                   }}
                 />
               ))}
@@ -664,7 +754,7 @@ export default function VoiceOnlyMode({ onSendMessage, isLoading, onBack }: Voic
         </div>
 
         {/* Status Display */}
-        <motion.div className="text-center max-w-md" animate={{ opacity: 1 }} transition={{ duration: 0.5 }}>
+        <motion.div className="text-center max-w-md" animate={{ opacity: 1 }} transition={{ duration: 0.3 }}>
           <div
             className={`p-6 rounded-2xl backdrop-blur-sm border ${
               isListening
@@ -709,22 +799,19 @@ export default function VoiceOnlyMode({ onSendMessage, isLoading, onBack }: Voic
         {/* Enhanced Instructions */}
         <div className="text-center text-sm text-white/60 max-w-lg">
           <div className="bg-black/30 p-4 rounded-lg">
-            <h4 className="font-semibold mb-2 text-white/80">🇮🇳 Enhanced Voice Mode:</h4>
+            <h4 className="font-semibold mb-2 text-white/80">🇮🇳 Fast Voice Mode:</h4>
             <div className="space-y-1 text-left">
               <p>
-                🇮🇳 <strong>Tap Indian flag</strong> to start listening
+                🇮🇳 <strong>Tap Indian flag</strong> to start instantly
               </p>
               <p>
                 🗣️ <strong>Speak clearly</strong> when flag glows orange
               </p>
               <p>
-                👀 <strong>Watch status</strong> for real-time feedback
+                ⚡ <strong>Fast processing</strong> - reduced wait times
               </p>
               <p>
-                🤖 <strong>AI processes</strong> your question (blue glow)
-              </p>
-              <p>
-                🔊 <strong>Listen</strong> to Shark 2.0's response (green glow)
+                🔊 <strong>Smooth speech</strong> - no more pauses or stops
               </p>
               <p>
                 🔄 <strong>Tap again</strong> for next question
@@ -734,7 +821,7 @@ export default function VoiceOnlyMode({ onSendMessage, isLoading, onBack }: Voic
               </p>
             </div>
             <div className="mt-3 text-xs text-yellow-400">
-              💡 <strong>Mobile Tip:</strong> Ensure stable internet connection for best results!
+              ⚡ <strong>Optimized:</strong> Faster initialization, smoother speech, no interruptions!
             </div>
           </div>
         </div>
