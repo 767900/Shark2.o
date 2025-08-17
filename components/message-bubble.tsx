@@ -1,7 +1,7 @@
 "use client"
 
 import { motion } from "framer-motion"
-import { useState, useEffect } from "react"
+import { User, Bot, AlertCircle } from "lucide-react"
 import Citations from "@/components/citations"
 import RelatedQuestions from "@/components/related-questions"
 import type { Message } from "@/types/chat"
@@ -11,104 +11,124 @@ interface MessageBubbleProps {
   onRelatedQuestionClick?: (question: string) => void
 }
 
+// Safe timestamp formatting function
+const formatTimestamp = (timestamp: any): string => {
+  try {
+    let date: Date
+
+    if (timestamp instanceof Date) {
+      date = timestamp
+    } else if (typeof timestamp === "string" || typeof timestamp === "number") {
+      date = new Date(timestamp)
+    } else {
+      date = new Date()
+    }
+
+    // Check if date is valid
+    if (isNaN(date.getTime())) {
+      date = new Date()
+    }
+
+    return date.toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    })
+  } catch (error) {
+    console.warn("Error formatting timestamp:", error)
+    return new Date().toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    })
+  }
+}
+
 export default function MessageBubble({ message, onRelatedQuestionClick }: MessageBubbleProps) {
-  const [isMobile, setIsMobile] = useState(false)
   const isUser = message.role === "user"
   const isError = message.isError
 
-  // Detect mobile device
-  useEffect(() => {
-    const checkMobile = () => {
-      const isMobileDevice =
-        window.innerWidth < 768 ||
-        /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
-      setIsMobile(isMobileDevice)
-    }
-
-    checkMobile()
-    window.addEventListener("resize", checkMobile)
-    return () => window.removeEventListener("resize", checkMobile)
-  }, [])
-
   return (
-    <div className={`flex ${isUser ? "justify-end" : "justify-start"} mb-6 ${isMobile ? "px-2" : ""}`}>
-      <div
-        className={`flex items-start gap-${isMobile ? "3" : "4"} max-w-[${isMobile ? "95%" : "85%"}] ${isUser ? "flex-row-reverse" : "flex-row"}`}
-      >
+    <motion.div
+      className={`flex ${isUser ? "justify-end" : "justify-start"} mb-4`}
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+    >
+      <div className={`flex ${isUser ? "flex-row-reverse" : "flex-row"} items-start gap-3 max-w-[85%]`}>
         {/* Avatar */}
-        {isUser ? (
-          <motion.div
-            className={`${isMobile ? "w-8 h-8" : "w-10 h-10"} rounded-full bg-gradient-to-r from-cyan-500 to-purple-500 text-white flex items-center justify-center ${isMobile ? "text-xs" : "text-sm"} font-bold border border-white/20 shadow-lg`}
-            whileHover={{ scale: 1.1 }}
-          >
-            👤
-          </motion.div>
-        ) : (
-          <motion.div
-            className={`${isMobile ? "w-8 h-8" : "w-10 h-10"} rounded-full bg-gradient-to-r from-purple-600 to-pink-600 flex items-center justify-center ${isMobile ? "text-sm" : "text-lg"} border border-white/20 shadow-lg`}
-            animate={{
-              boxShadow: isError
-                ? ["0 0 5px #ff0000", "0 0 15px #ff0000", "0 0 5px #ff0000"]
-                : ["0 0 5px #00ffff", "0 0 15px #ff0080", "0 0 5px #00ffff"],
-            }}
-            transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY }}
-          >
-            🦈
-          </motion.div>
-        )}
+        <motion.div
+          className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
+            isUser
+              ? "bg-gradient-to-r from-blue-500 to-purple-500"
+              : isError
+                ? "bg-gradient-to-r from-red-500 to-orange-500"
+                : "bg-gradient-to-r from-green-500 to-teal-500"
+          } text-white shadow-lg`}
+          whileHover={{ scale: 1.1 }}
+          transition={{ type: "spring", stiffness: 300 }}
+        >
+          {isUser ? (
+            <User className="w-4 h-4" />
+          ) : isError ? (
+            <AlertCircle className="w-4 h-4" />
+          ) : (
+            <Bot className="w-4 h-4" />
+          )}
+        </motion.div>
 
         {/* Message Content */}
-        <motion.div
-          className={`rounded-2xl ${isMobile ? "px-4 py-3" : "px-6 py-4"} border backdrop-blur-sm shadow-xl ${
-            isUser
-              ? "bg-black/80 text-cyan-100 border-cyan-400/30 shadow-cyan-500/20"
-              : isError
-                ? "bg-black/85 text-red-200 border-red-400/30 shadow-red-500/20"
-                : "bg-black/85 text-white border-purple-400/30 shadow-purple-500/20"
-          }`}
-          whileHover={{ scale: isMobile ? 1.01 : 1.02, y: isMobile ? -1 : -2 }}
-          transition={{ type: "spring", stiffness: 300, damping: 30 }}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-        >
-          <div
-            className={`${isMobile ? "text-base" : "text-lg"} leading-relaxed whitespace-pre-wrap font-semibold text-white`}
-            style={{
-              textShadow: "0 1px 2px rgba(0,0,0,0.8)",
-              letterSpacing: "0.01em",
-            }}
+        <div className={`flex flex-col ${isUser ? "items-end" : "items-start"}`}>
+          {/* Message Bubble */}
+          <motion.div
+            className={`relative px-4 py-3 rounded-2xl shadow-lg backdrop-blur-md border ${
+              isUser
+                ? "bg-black/80 text-white border-white/20 rounded-br-md"
+                : isError
+                  ? "bg-black/85 text-red-100 border-red-500/30 rounded-bl-md"
+                  : "bg-black/85 text-white border-white/20 rounded-bl-md"
+            }`}
+            whileHover={{ scale: 1.02 }}
+            transition={{ type: "spring", stiffness: 300 }}
           >
-            {message.content}
+            {/* Message Text */}
+            <div className="prose prose-invert max-w-none">
+              {message.content.split("\n").map((line, index) => (
+                <p key={index} className="mb-2 last:mb-0 text-sm leading-relaxed">
+                  {line}
+                </p>
+              ))}
+            </div>
+
+            {/* Image indicator */}
+            {message.hasImage && (
+              <div className="mt-2 text-xs opacity-70 flex items-center gap-1">📷 Image attached</div>
+            )}
+
+            {/* Voice indicator */}
+            {message.isVoice && <div className="mt-2 text-xs opacity-70 flex items-center gap-1">🎤 Voice message</div>}
+          </motion.div>
+
+          {/* Timestamp */}
+          <div className={`text-xs text-white/60 mt-1 ${isUser ? "text-right" : "text-left"}`}>
+            {formatTimestamp(message.timestamp)}
           </div>
 
           {/* Citations */}
-          {message.citations && <Citations citations={message.citations} />}
-
-          {/* Related Questions */}
-          {message.related_questions && onRelatedQuestionClick && (
-            <RelatedQuestions questions={message.related_questions} onQuestionClick={onRelatedQuestionClick} />
+          {message.citations && message.citations.length > 0 && (
+            <div className="mt-2 max-w-full">
+              <Citations citations={message.citations} />
+            </div>
           )}
 
-          <div
-            className={`flex items-center justify-between mt-3 pt-2 border-t border-white/20 ${isMobile ? "flex-col gap-2" : ""}`}
-          >
-            <span className={`${isMobile ? "text-xs" : "text-xs"} opacity-80 font-medium text-gray-200`}>
-              {message.timestamp.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-            </span>
-            <div className={`flex items-center gap-2 ${isMobile ? "text-xs" : ""}`}>
-              {message.isVoice && <span className="text-xs opacity-80 font-medium text-green-300">🎤 VOICE</span>}
-              {message.hasImage && <span className="text-xs opacity-80 font-medium text-blue-300">📸 IMAGE</span>}
-              {!isUser && !isError && (
-                <span
-                  className={`${isMobile ? "text-xs" : "text-xs"} opacity-90 bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent font-bold`}
-                >
-                  🦈 SHARK 2.0
-                </span>
-              )}
+          {/* Related Questions */}
+          {message.related_questions && message.related_questions.length > 0 && onRelatedQuestionClick && (
+            <div className="mt-3 max-w-full">
+              <RelatedQuestions questions={message.related_questions} onQuestionClick={onRelatedQuestionClick} />
             </div>
-          </div>
-        </motion.div>
+          )}
+        </div>
       </div>
-    </div>
+    </motion.div>
   )
 }

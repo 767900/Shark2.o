@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react"
 import { motion } from "framer-motion"
-import { Trash2 } from "lucide-react"
+import { Trash2, Clock } from "lucide-react"
 import ChatWindow from "@/components/chat-window"
 import InputBar from "@/components/input-bar"
 import SharkLogo from "@/components/shark-logo"
@@ -10,6 +10,8 @@ import SharkLoading from "@/components/shark-loading"
 import VoiceOnlyMode from "@/components/voice-only-mode"
 import DiscoverPage from "@/components/discover-page"
 import ImaginePage from "@/components/imagine-page"
+import ChatHistory from "@/components/chat-history"
+import { ChatStorage } from "@/lib/chat-storage"
 import type { Message } from "@/types/chat"
 
 const getRandomWelcomeMessage = () => {
@@ -43,6 +45,7 @@ export default function AIWebChat() {
   const [isVoiceMode, setIsVoiceMode] = useState(false)
   const [isDiscoverMode, setIsDiscoverMode] = useState(false)
   const [isImagineMode, setIsImagineMode] = useState(false)
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
@@ -147,7 +150,11 @@ export default function AIWebChat() {
         isError: false,
       }
 
-      setMessages((prev) => [...prev, aiMessage])
+      const updatedMessages = [...messages, userMessage, aiMessage]
+      setMessages(updatedMessages)
+
+      // Save to chat history after successful conversation
+      ChatStorage.saveSession(updatedMessages)
 
       // No voice output in text mode - removed voice functionality from chat
     } catch (error) {
@@ -160,7 +167,12 @@ export default function AIWebChat() {
         timestamp: new Date(),
         isError: false,
       }
-      setMessages((prev) => [...prev, errorMessage])
+
+      const updatedMessages = [...messages, userMessage, errorMessage]
+      setMessages(updatedMessages)
+
+      // Save even error conversations to history
+      ChatStorage.saveSession(updatedMessages)
     } finally {
       setIsLoading(false)
     }
@@ -187,6 +199,11 @@ export default function AIWebChat() {
         timestamp: new Date(),
       },
     ])
+  }
+
+  const handleLoadHistorySession = (sessionMessages: Message[]) => {
+    setMessages(sessionMessages)
+    setIsHistoryOpen(false)
   }
 
   return (
@@ -235,59 +252,52 @@ export default function AIWebChat() {
             </div>
           </div>
 
-          {/* Desktop Controls */}
+          {/* Desktop Controls - Clean Icons Only */}
           {!isMobile && (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-4">
               <motion.button
-                onClick={() => setIsImagineMode(!isImagineMode)}
-                className={`p-2 rounded-lg transition-all duration-200 border border-white/20 ${
-                  isImagineMode
-                    ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg animate-pulse"
-                    : "bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg hover:from-purple-700 hover:to-pink-700"
-                }`}
-                whileHover={{ scale: 1.05 }}
+                onClick={() => setIsHistoryOpen(true)}
+                className="text-white hover:text-cyan-300 transition-colors"
+                whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.95 }}
-                title="AI Image Generation"
+                title="Chat History"
               >
-                🎨
-              </motion.button>
-
-              <motion.button
-                onClick={() => setIsVoiceMode(!isVoiceMode)}
-                className={`p-2 rounded-lg transition-all duration-200 border border-white/20 ${
-                  isVoiceMode
-                    ? "bg-purple-600 text-white shadow-lg animate-pulse"
-                    : "bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg hover:from-purple-700 hover:to-pink-700"
-                }`}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                title="Voice Mode"
-              >
-                🎤
+                <Clock className="w-6 h-6" />
               </motion.button>
 
               <motion.button
                 onClick={clearChat}
-                className="p-2 rounded-lg bg-white/10 text-red-400 hover:bg-red-900/30 transition-colors border border-white/20"
-                whileHover={{ scale: 1.05 }}
+                className="text-red-400 hover:text-red-300 transition-colors"
+                whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.95 }}
                 title="Clear Chat"
               >
-                🗑️
+                <Trash2 className="w-6 h-6" />
               </motion.button>
             </div>
           )}
 
-          {/* Mobile Clear Chat Button */}
+          {/* Mobile Controls - Clean Icons Only */}
           {isMobile && (
-            <motion.button
-              onClick={clearChat}
-              className="p-1.5 rounded-lg bg-white/10 text-red-400 hover:bg-red-900/30 transition-colors border border-white/20"
-              whileTap={{ scale: 0.95 }}
-              title="Clear Chat"
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-            </motion.button>
+            <div className="flex items-center gap-3">
+              <motion.button
+                onClick={() => setIsHistoryOpen(true)}
+                className="text-white hover:text-cyan-300 transition-colors"
+                whileTap={{ scale: 0.95 }}
+                title="History"
+              >
+                <Clock className="w-5 h-5" />
+              </motion.button>
+
+              <motion.button
+                onClick={clearChat}
+                className="text-red-400 hover:text-red-300 transition-colors"
+                whileTap={{ scale: 0.95 }}
+                title="Clear Chat"
+              >
+                <Trash2 className="w-5 h-5" />
+              </motion.button>
+            </div>
           )}
         </motion.header>
 
@@ -336,6 +346,13 @@ export default function AIWebChat() {
           </>
         )}
       </div>
+
+      {/* Chat History Modal */}
+      <ChatHistory
+        isOpen={isHistoryOpen}
+        onClose={() => setIsHistoryOpen(false)}
+        onLoadSession={handleLoadHistorySession}
+      />
     </div>
   )
 }
