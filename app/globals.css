@@ -119,6 +119,7 @@ main {
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
 }
 
 /* Bold headings and important text */
@@ -131,6 +132,7 @@ h6 {
   font-weight: 700;
   letter-spacing: -0.02em;
   color: #ffffff;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
 }
 
 /* Enhanced button text */
@@ -159,18 +161,21 @@ button {
     font-size: 14px;
     line-height: 1.5;
     font-weight: 500;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
   }
 
   .text-base {
     font-size: 16px;
     line-height: 1.6;
     font-weight: 600;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
   }
 
   .text-lg {
     font-size: 18px;
     line-height: 1.6;
     font-weight: 600;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
   }
 
   /* Prevent zoom on input focus */
@@ -256,14 +261,34 @@ strong,
 .font-bold {
   font-weight: 700;
   color: #ffffff;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
 }
 
 /* Medium weight for secondary text */
 .font-medium {
   font-weight: 600;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
 }
 
 /* Semibold for primary text */
 .font-semibold {
   font-weight: 700;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+}
+
+/* Enhanced message bubble styling */
+.message-bubble {
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+/* Text shadow for better readability */
+.text-shadow {
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+}
+
+.text-shadow-strong {
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
 }

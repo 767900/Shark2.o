@@ -38,14 +38,14 @@ export default function MessageBubble({ message, onRelatedQuestionClick }: Messa
         {/* Avatar */}
         {isUser ? (
           <motion.div
-            className={`${isMobile ? "w-8 h-8" : "w-10 h-10"} rounded-full bg-gradient-to-r from-cyan-500 to-purple-500 text-white flex items-center justify-center ${isMobile ? "text-xs" : "text-sm"} font-bold border border-white/20`}
+            className={`${isMobile ? "w-8 h-8" : "w-10 h-10"} rounded-full bg-gradient-to-r from-cyan-500 to-purple-500 text-white flex items-center justify-center ${isMobile ? "text-xs" : "text-sm"} font-bold border border-white/20 shadow-lg`}
             whileHover={{ scale: 1.1 }}
           >
             👤
           </motion.div>
         ) : (
           <motion.div
-            className={`${isMobile ? "w-8 h-8" : "w-10 h-10"} rounded-full bg-gradient-to-r from-purple-600 to-pink-600 flex items-center justify-center ${isMobile ? "text-sm" : "text-lg"} border border-white/20`}
+            className={`${isMobile ? "w-8 h-8" : "w-10 h-10"} rounded-full bg-gradient-to-r from-purple-600 to-pink-600 flex items-center justify-center ${isMobile ? "text-sm" : "text-lg"} border border-white/20 shadow-lg`}
             animate={{
               boxShadow: isError
                 ? ["0 0 5px #ff0000", "0 0 15px #ff0000", "0 0 5px #ff0000"]
@@ -59,12 +59,12 @@ export default function MessageBubble({ message, onRelatedQuestionClick }: Messa
 
         {/* Message Content */}
         <motion.div
-          className={`rounded-2xl ${isMobile ? "px-4 py-3" : "px-6 py-4"} border ${
+          className={`rounded-2xl ${isMobile ? "px-4 py-3" : "px-6 py-4"} border backdrop-blur-sm shadow-xl ${
             isUser
-              ? "bg-gradient-to-r from-cyan-600/20 to-purple-600/20 text-cyan-100 border-cyan-400/50"
+              ? "bg-black/80 text-cyan-100 border-cyan-400/30 shadow-cyan-500/20"
               : isError
-                ? "bg-gradient-to-r from-red-600/20 to-pink-600/20 text-red-200 border-red-400/50"
-                : "bg-gradient-to-r from-purple-600/20 to-pink-600/20 text-purple-100 border-purple-400/50"
+                ? "bg-black/85 text-red-200 border-red-400/30 shadow-red-500/20"
+                : "bg-black/85 text-white border-purple-400/30 shadow-purple-500/20"
           }`}
           whileHover={{ scale: isMobile ? 1.01 : 1.02, y: isMobile ? -1 : -2 }}
           transition={{ type: "spring", stiffness: 300, damping: 30 }}
@@ -73,6 +73,10 @@ export default function MessageBubble({ message, onRelatedQuestionClick }: Messa
         >
           <div
             className={`${isMobile ? "text-base" : "text-lg"} leading-relaxed whitespace-pre-wrap font-semibold text-white`}
+            style={{
+              textShadow: "0 1px 2px rgba(0,0,0,0.8)",
+              letterSpacing: "0.01em",
+            }}
           >
             {message.content}
           </div>
@@ -86,17 +90,17 @@ export default function MessageBubble({ message, onRelatedQuestionClick }: Messa
           )}
 
           <div
-            className={`flex items-center justify-between mt-3 pt-2 border-t border-current/20 ${isMobile ? "flex-col gap-2" : ""}`}
+            className={`flex items-center justify-between mt-3 pt-2 border-t border-white/20 ${isMobile ? "flex-col gap-2" : ""}`}
           >
-            <span className={`${isMobile ? "text-xs" : "text-xs"} opacity-70 font-medium`}>
+            <span className={`${isMobile ? "text-xs" : "text-xs"} opacity-80 font-medium text-gray-200`}>
               {message.timestamp.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
             </span>
             <div className={`flex items-center gap-2 ${isMobile ? "text-xs" : ""}`}>
-              {message.isVoice && <span className="text-xs opacity-70 font-medium">🎤 VOICE</span>}
-              {message.hasImage && <span className="text-xs opacity-70 font-medium">📸 IMAGE</span>}
+              {message.isVoice && <span className="text-xs opacity-80 font-medium text-green-300">🎤 VOICE</span>}
+              {message.hasImage && <span className="text-xs opacity-80 font-medium text-blue-300">📸 IMAGE</span>}
               {!isUser && !isError && (
                 <span
-                  className={`${isMobile ? "text-xs" : "text-xs"} opacity-70 bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent font-bold`}
+                  className={`${isMobile ? "text-xs" : "text-xs"} opacity-90 bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent font-bold`}
                 >
                   🦈 SHARK 2.0
                 </span>

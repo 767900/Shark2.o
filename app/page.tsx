@@ -2,9 +2,9 @@
 
 import { useState, useRef, useEffect } from "react"
 import { motion } from "framer-motion"
+import { Trash2 } from "lucide-react"
 import ChatWindow from "@/components/chat-window"
 import InputBar from "@/components/input-bar"
-import VoiceSynthesizer from "@/components/voice-synthesizer"
 import SharkLogo from "@/components/shark-logo"
 import SharkLoading from "@/components/shark-loading"
 import VoiceOnlyMode from "@/components/voice-only-mode"
@@ -37,7 +37,6 @@ export default function AIWebChat() {
   ])
   const [inputText, setInputText] = useState("")
   const [isLoading, setIsLoading] = useState(false)
-  const [voiceEnabled, setVoiceEnabled] = useState(true)
   const [lastAiMessage, setLastAiMessage] = useState<string>("")
   const [isSpeaking, setIsSpeaking] = useState(false)
   const [currentProvider, setCurrentProvider] = useState<string>("Smart Assistant Ready 🧠")
@@ -45,7 +44,6 @@ export default function AIWebChat() {
   const [isDiscoverMode, setIsDiscoverMode] = useState(false)
   const [isImagineMode, setIsImagineMode] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
-  const [showMobileMenu, setShowMobileMenu] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   // Detect mobile device
@@ -151,20 +149,7 @@ export default function AIWebChat() {
 
       setMessages((prev) => [...prev, aiMessage])
 
-      // Voice output - ONLY when voice output toggle is enabled
-      // This applies to chat section only, voice mode is handled separately
-      if (voiceEnabled && data.content && !isVoiceMode) {
-        console.log("🔊 Voice output enabled - preparing to speak response")
-        // Small delay to ensure message is rendered first
-        setTimeout(() => {
-          const textToSpeak = data.content.trim()
-          if (textToSpeak) {
-            setLastAiMessage(textToSpeak)
-          }
-        }, 300)
-      } else {
-        console.log("🔇 Voice output disabled - text only response")
-      }
+      // No voice output in text mode - removed voice functionality from chat
     } catch (error) {
       console.error("💥 CLIENT: Error in handleSendMessage:", error)
 
@@ -176,15 +161,6 @@ export default function AIWebChat() {
         isError: false,
       }
       setMessages((prev) => [...prev, errorMessage])
-
-      // Voice output for error messages - ONLY when voice output toggle is enabled
-      if (voiceEnabled && !isVoiceMode) {
-        setTimeout(() => {
-          setLastAiMessage(
-            "I'm working in smart mode and ready to help! Try asking me about specific topics I can explain.",
-          )
-        }, 300)
-      }
     } finally {
       setIsLoading(false)
     }
@@ -195,6 +171,7 @@ export default function AIWebChat() {
   }
 
   const clearChat = () => {
+    // Stop any speech synthesis if running
     if (typeof window !== "undefined" && "speechSynthesis" in window) {
       window.speechSynthesis.cancel()
     }
@@ -211,141 +188,6 @@ export default function AIWebChat() {
       },
     ])
   }
-
-  const toggleVoice = () => {
-    const newVoiceState = !voiceEnabled
-    setVoiceEnabled(newVoiceState)
-
-    // If turning off voice, stop any current speech
-    if (!newVoiceState && typeof window !== "undefined" && "speechSynthesis" in window) {
-      window.speechSynthesis.cancel()
-      setIsSpeaking(false)
-      setLastAiMessage("")
-    }
-
-    console.log(`🔊 Voice output ${newVoiceState ? "ENABLED" : "DISABLED"}`)
-  }
-
-  const isSpeechSupported = typeof window !== "undefined" && "speechSynthesis" in window
-
-  // Mobile Menu Component
-  const MobileMenu = () => (
-    <motion.div
-      initial={{ opacity: 0, y: -20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -20 }}
-      className="absolute top-full left-0 right-0 bg-black/95 backdrop-blur-md border-b border-white/20 z-50"
-    >
-      <div className="p-4 space-y-3">
-        <motion.button
-          onClick={() => {
-            setIsImagineMode(!isImagineMode)
-            setShowMobileMenu(false)
-          }}
-          className={`w-full p-4 rounded-xl transition-all duration-200 border ${
-            isImagineMode
-              ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white border-purple-400"
-              : "bg-gradient-to-r from-purple-600/20 to-pink-600/20 text-white border-purple-400/50 hover:from-purple-600/30 hover:to-pink-600/30"
-          }`}
-          whileTap={{ scale: 0.98 }}
-        >
-          <div className="flex items-center gap-3">
-            <span className="text-2xl">🎨</span>
-            <div className="text-left">
-              <div className="font-semibold">AI Image Generation</div>
-              <div className="text-sm opacity-80">Create amazing artwork with AI</div>
-            </div>
-          </div>
-        </motion.button>
-
-        <motion.button
-          onClick={() => {
-            setIsVoiceMode(!isVoiceMode)
-            setShowMobileMenu(false)
-          }}
-          className={`w-full p-4 rounded-xl transition-all duration-200 border ${
-            isVoiceMode
-              ? "bg-purple-600 text-white border-purple-400"
-              : "bg-gradient-to-r from-purple-600/20 to-pink-600/20 text-white border-purple-400/50 hover:from-purple-600/30 hover:to-pink-600/30"
-          }`}
-          whileTap={{ scale: 0.98 }}
-        >
-          <div className="flex items-center gap-3">
-            <span className="text-2xl">🎤</span>
-            <div className="text-left">
-              <div className="font-semibold">Voice Mode</div>
-              <div className="text-sm opacity-80">Talk with Shark 2.0 using voice</div>
-            </div>
-          </div>
-        </motion.button>
-
-        <motion.button
-          onClick={() => {
-            setIsDiscoverMode(!isDiscoverMode)
-            setShowMobileMenu(false)
-          }}
-          className={`w-full p-4 rounded-xl transition-all duration-200 border ${
-            isDiscoverMode
-              ? "bg-gradient-to-r from-cyan-600 to-blue-600 text-white border-cyan-400"
-              : "bg-gradient-to-r from-cyan-600/20 to-blue-600/20 text-white border-cyan-400/50 hover:from-cyan-600/30 hover:to-blue-600/30"
-          }`}
-          whileTap={{ scale: 0.98 }}
-        >
-          <div className="flex items-center gap-3">
-            <span className="text-2xl">🌐</span>
-            <div className="text-left">
-              <div className="font-semibold">Discover News</div>
-              <div className="text-sm opacity-80">Latest news and updates</div>
-            </div>
-          </div>
-        </motion.button>
-
-        {isSpeechSupported && (
-          <motion.button
-            onClick={() => {
-              toggleVoice()
-              setShowMobileMenu(false)
-            }}
-            className={`w-full p-4 rounded-xl transition-all duration-200 border ${
-              voiceEnabled
-                ? isSpeaking
-                  ? "bg-green-600 text-white border-green-400 animate-pulse"
-                  : "bg-blue-600 text-white border-blue-400"
-                : "bg-white/10 text-gray-300 border-white/20"
-            }`}
-            whileTap={{ scale: 0.98 }}
-          >
-            <div className="flex items-center gap-3">
-              <span className="text-2xl">{voiceEnabled ? "🔊" : "🔇"}</span>
-              <div className="text-left">
-                <div className="font-semibold">Voice Output</div>
-                <div className="text-sm opacity-80">
-                  {voiceEnabled ? "Voice responses enabled" : "Voice responses disabled"}
-                </div>
-              </div>
-            </div>
-          </motion.button>
-        )}
-
-        <motion.button
-          onClick={() => {
-            clearChat()
-            setShowMobileMenu(false)
-          }}
-          className="w-full p-4 rounded-xl bg-red-600/20 text-red-400 border border-red-400/50 hover:bg-red-600/30 transition-all"
-          whileTap={{ scale: 0.98 }}
-        >
-          <div className="flex items-center gap-3">
-            <span className="text-2xl">🗑️</span>
-            <div className="text-left">
-              <div className="font-semibold">Clear Chat</div>
-              <div className="text-sm opacity-80">Start a new conversation</div>
-            </div>
-          </div>
-        </motion.button>
-      </div>
-    </motion.div>
-  )
 
   return (
     <div
@@ -364,18 +206,18 @@ export default function AIWebChat() {
         className={`container mx-auto ${isMobile ? "max-w-full px-0" : "max-w-4xl"} h-screen flex flex-col relative z-10`}
       >
         <motion.header
-          className={`flex items-center justify-between ${isMobile ? "p-3" : "p-4"} border-b border-white/20 backdrop-blur-md bg-white/10 relative`}
+          className={`flex items-center justify-between ${isMobile ? "p-1.5" : "p-2"} border-b border-white/20 backdrop-blur-md bg-white/10 relative`}
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <SharkLogo size={isMobile ? "sm" : "md"} animated={true} glowing={isSpeaking} />
             <div>
-              <h1 className={`${isMobile ? "text-lg" : "text-2xl"} font-bold text-white flex items-center gap-2`}>
+              <h1 className={`${isMobile ? "text-base" : "text-xl"} font-bold text-white flex items-center gap-2`}>
                 Shark 2.0 🇮🇳
                 <motion.span
-                  className={`${isMobile ? "text-xs px-2 py-1" : "text-xs px-3 py-1"} rounded-full font-mono bg-gradient-to-r from-green-500 to-blue-500 text-white`}
+                  className={`${isMobile ? "text-xs px-1.5 py-0.5" : "text-xs px-2 py-1"} rounded-full font-mono bg-gradient-to-r from-green-500 to-blue-500 text-white`}
                   animate={{
                     boxShadow: ["0 0 5px #10b981", "0 0 15px #3b82f6", "0 0 5px #10b981"],
                   }}
@@ -385,11 +227,9 @@ export default function AIWebChat() {
                 </motion.span>
               </h1>
               {!isMobile && (
-                <p className="text-sm text-white/80 font-mono">
-                  🎯 {currentProvider}
-                  {isSpeaking && " • 🔊 Speaking"}
+                <p className="text-xs text-white/80 font-mono">
+                  💫 Great power comes with great responsibility
                   {isLoading && " • 🔄 Processing..."}
-                  {voiceEnabled ? " • 🔊 Voice ON" : " • 🔇 Voice OFF"}
                 </p>
               )}
             </div>
@@ -397,10 +237,10 @@ export default function AIWebChat() {
 
           {/* Desktop Controls */}
           {!isMobile && (
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
               <motion.button
                 onClick={() => setIsImagineMode(!isImagineMode)}
-                className={`p-3 rounded-lg transition-all duration-200 border border-white/20 ${
+                className={`p-2 rounded-lg transition-all duration-200 border border-white/20 ${
                   isImagineMode
                     ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg animate-pulse"
                     : "bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg hover:from-purple-700 hover:to-pink-700"
@@ -414,7 +254,7 @@ export default function AIWebChat() {
 
               <motion.button
                 onClick={() => setIsVoiceMode(!isVoiceMode)}
-                className={`p-3 rounded-lg transition-all duration-200 border border-white/20 ${
+                className={`p-2 rounded-lg transition-all duration-200 border border-white/20 ${
                   isVoiceMode
                     ? "bg-purple-600 text-white shadow-lg animate-pulse"
                     : "bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg hover:from-purple-700 hover:to-pink-700"
@@ -426,27 +266,9 @@ export default function AIWebChat() {
                 🎤
               </motion.button>
 
-              {isSpeechSupported && (
-                <motion.button
-                  onClick={toggleVoice}
-                  className={`p-3 rounded-lg transition-all duration-200 border border-white/20 ${
-                    voiceEnabled
-                      ? isSpeaking
-                        ? "bg-green-600 text-white animate-pulse shadow-lg"
-                        : "bg-blue-600 text-white shadow-lg"
-                      : "bg-white/10 text-gray-300"
-                  }`}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  title={`Voice Output: ${voiceEnabled ? "ON" : "OFF"}`}
-                >
-                  {voiceEnabled ? "🔊" : "🔇"}
-                </motion.button>
-              )}
-
               <motion.button
                 onClick={clearChat}
-                className="p-3 rounded-lg bg-white/10 text-red-400 hover:bg-red-900/30 transition-colors border border-white/20"
+                className="p-2 rounded-lg bg-white/10 text-red-400 hover:bg-red-900/30 transition-colors border border-white/20"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 title="Clear Chat"
@@ -456,39 +278,25 @@ export default function AIWebChat() {
             </div>
           )}
 
-          {/* Mobile Menu Button */}
+          {/* Mobile Clear Chat Button */}
           {isMobile && (
             <motion.button
-              onClick={() => setShowMobileMenu(!showMobileMenu)}
-              className={`p-3 rounded-lg transition-all duration-200 border border-white/20 ${
-                showMobileMenu ? "bg-white/20 text-white" : "bg-white/10 text-white hover:bg-white/20"
-              }`}
+              onClick={clearChat}
+              className="p-1.5 rounded-lg bg-white/10 text-red-400 hover:bg-red-900/30 transition-colors border border-white/20"
               whileTap={{ scale: 0.95 }}
+              title="Clear Chat"
             >
-              <div className="flex flex-col gap-1">
-                <div
-                  className={`w-5 h-0.5 bg-current transition-transform ${showMobileMenu ? "rotate-45 translate-y-1.5" : ""}`}
-                ></div>
-                <div className={`w-5 h-0.5 bg-current transition-opacity ${showMobileMenu ? "opacity-0" : ""}`}></div>
-                <div
-                  className={`w-5 h-0.5 bg-current transition-transform ${showMobileMenu ? "-rotate-45 -translate-y-1.5" : ""}`}
-                ></div>
-              </div>
+              <Trash2 className="w-3.5 h-3.5" />
             </motion.button>
           )}
-
-          {/* Mobile Menu */}
-          {isMobile && showMobileMenu && <MobileMenu />}
         </motion.header>
 
-        {/* Mobile Status Bar */}
+        {/* Mobile Status Bar - More Compact */}
         {isMobile && (
-          <div className="px-3 py-2 bg-black/20 border-b border-white/10">
+          <div className="px-2 py-0.5 bg-black/20 border-b border-white/10">
             <p className="text-xs text-white/80 font-mono text-center">
-              🎯 {currentProvider}
-              {isSpeaking && " • 🔊 Speaking"}
+              💫 Great power comes with great responsibility
               {isLoading && " • 🔄 Processing..."}
-              {voiceEnabled ? " • 🔊 Voice ON" : " • 🔇 Voice OFF"}
             </p>
           </div>
         )}
@@ -520,23 +328,12 @@ export default function AIWebChat() {
               setInputText={setInputText}
               onSendMessage={handleSendMessage}
               isLoading={isLoading}
-              voiceEnabled={voiceEnabled}
+              voiceEnabled={false}
               onDiscoverClick={() => setIsDiscoverMode(true)}
+              onVoiceModeClick={() => setIsVoiceMode(true)}
+              onImageGenerationClick={() => setIsImagineMode(true)}
             />
           </>
-        )}
-
-        {/* Voice Synthesizer - Only active when voice is enabled and not in voice mode */}
-        {isSpeechSupported && !isVoiceMode && (
-          <VoiceSynthesizer
-            text={lastAiMessage}
-            isEnabled={voiceEnabled}
-            onStart={() => setIsSpeaking(true)}
-            onEnd={() => {
-              setIsSpeaking(false)
-              setLastAiMessage("")
-            }}
-          />
         )}
       </div>
     </div>
