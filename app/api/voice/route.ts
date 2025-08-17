@@ -47,7 +47,7 @@ export async function POST(request: Request) {
 
 CRITICAL INSTRUCTION: The user just spoke in ${detectedLanguage.toUpperCase()}. You MUST respond in ${detectedLanguage.toUpperCase()}. Do not translate or change the language - respond in the exact same language they used!`
 
-    // Try different AI providers with language-aware settings
+    // Try different AI providers with enhanced error handling for mobile
     const providers = [
       {
         name: "Perplexity AI",
@@ -76,16 +76,23 @@ CRITICAL INSTRUCTION: The user just spoke in ${detectedLanguage.toUpperCase()}. 
     ]
 
     for (const provider of providers) {
-      if (!provider.key) continue
+      if (!provider.key) {
+        console.log(`⚠️ ${provider.name} API key not found, skipping...`)
+        continue
+      }
 
       try {
         console.log(`🇮🇳 Trying ${provider.name} with ${detectedLanguage} response...`)
+
+        const controller = new AbortController()
+        const timeoutId = setTimeout(() => controller.abort(), 30000) // 30 second timeout for mobile
 
         const response = await fetch(provider.url, {
           method: "POST",
           headers: {
             Authorization: `Bearer ${provider.key}`,
             "Content-Type": "application/json",
+            "User-Agent": "Shark2.0-VoiceMode/1.0",
           },
           body: JSON.stringify({
             model: provider.model,
@@ -99,7 +106,10 @@ CRITICAL INSTRUCTION: The user just spoke in ${detectedLanguage.toUpperCase()}. 
             frequency_penalty: 0.1,
             presence_penalty: 0.1,
           }),
+          signal: controller.signal,
         })
+
+        clearTimeout(timeoutId)
 
         if (response.ok) {
           const data = await response.json()
@@ -112,13 +122,15 @@ CRITICAL INSTRUCTION: The user just spoke in ${detectedLanguage.toUpperCase()}. 
               provider: `${provider.name} 🇮🇳`,
               language: detectedLanguage,
               status: "success",
+              timestamp: new Date().toISOString(),
             })
           } else {
             console.log(`⚠️ ${provider.name} gave short response:`, content)
             continue
           }
         } else {
-          console.log(`❌ ${provider.name} HTTP error:`, response.status)
+          const errorText = await response.text()
+          console.log(`❌ ${provider.name} HTTP error:`, response.status, errorText)
           continue
         }
       } catch (error) {
@@ -127,7 +139,7 @@ CRITICAL INSTRUCTION: The user just spoke in ${detectedLanguage.toUpperCase()}. 
       }
     }
 
-    // Language-aware fallback responses
+    // Enhanced language-aware fallback responses for mobile compatibility
     const fallbackResponse = generateLanguageAwareResponse(message, detectedLanguage)
 
     return Response.json({
@@ -135,21 +147,25 @@ CRITICAL INSTRUCTION: The user just spoke in ${detectedLanguage.toUpperCase()}. 
       provider: "Indian Girlfriend Mode 🇮🇳",
       language: detectedLanguage,
       status: "fallback",
+      timestamp: new Date().toISOString(),
     })
   } catch (error) {
     console.error("💔 Voice API Error:", error)
 
+    // Enhanced error response for mobile debugging
     return Response.json({
       content:
         "अरे यार, कुछ तकनीकी समस्या हो रही है! 🇮🇳 But don't worry jaan, main yahan hun na! Try karo phir se, I love talking to you! 😊💕",
       provider: "Indian Girlfriend Mode 🇮🇳",
       language: "hinglish",
       status: "error",
+      error: error.message,
+      timestamp: new Date().toISOString(),
     })
   }
 }
 
-// Language detection function
+// Enhanced language detection function
 function detectLanguage(text: string): string {
   const hindiWords = [
     "है",
@@ -228,97 +244,6 @@ function detectLanguage(text: string): string {
     "पापा",
     "भाई",
     "बहन",
-    "नेताजी",
-    "गांधी",
-    "भारत",
-    "हिंदुस्तान",
-    "दिल्ली",
-    "मुंबई",
-    "कोलकाता",
-    "चेन्नई",
-    "बैंगलोर",
-    "हैदराबाद",
-    "पुणे",
-    "जयपुर",
-    "लखनऊ",
-    "कानपुर",
-    "नागपुर",
-    "इंदौर",
-    "ठाणे",
-    "भोपाल",
-    "विशाखापत्तनम",
-    "पटना",
-    "वडोदरा",
-    "लुधियाना",
-    "आगरा",
-    "नाशिक",
-    "फरीदाबाद",
-    "मेरठ",
-    "राजकोट",
-    "कल्याण",
-    "वासई",
-    "वाराणसी",
-    "श्रीनगर",
-    "औरंगाबाद",
-    "धनबाद",
-    "अमृतसर",
-    "नवी",
-    "मुंबई",
-    "अल्लाहाबाद",
-    "रांची",
-    "हावड़ा",
-    "जबलपुर",
-    "ग्वालियर",
-    "विजयवाड़ा",
-    "जोधपुर",
-    "मदुरै",
-    "राजकोट",
-    "कोटा",
-    "चंडीगढ़",
-    "गुड़गांव",
-    "सोलापुर",
-    "हुबली",
-    "धारवाड़",
-    "बरेली",
-    "मोरादाबाद",
-    "मैसूर",
-    "गोरखपुर",
-    "अलीगढ़",
-    "जालंधर",
-    "भुवनेश्वर",
-    "सलेम",
-    "मिरा",
-    "भयंदर",
-    "वारंगल",
-    "तिरुवनंतपुरम",
-    "गुंटूर",
-    "भिवंडी",
-    "सहारनपुर",
-    "गोरखपुर",
-    "बीकानेर",
-    "अमरावती",
-    "नोएडा",
-    "जमशेदपुर",
-    "भिलाई",
-    "कटक",
-    "फिरोजाबाद",
-    "अमरावती",
-    "तुम्हारा",
-    "तुम्हें",
-    "तुम्हारे",
-    "तुम्हारी",
-    "हमारा",
-    "हमारे",
-    "हमारी",
-    "उनका",
-    "उनके",
-    "उनकी",
-    "इसका",
-    "इसके",
-    "इसकी",
-    "उसका",
-    "उसके",
-    "उसकी",
   ]
 
   const englishWords = [
@@ -527,7 +452,7 @@ function detectLanguage(text: string): string {
   }
 }
 
-// Language-aware response generator
+// Enhanced language-aware response generator
 function generateLanguageAwareResponse(message: string, language: string): string {
   const msg = message.toLowerCase()
 
@@ -541,11 +466,6 @@ function generateLanguageAwareResponse(message: string, language: string): strin
     // How are you in Hindi
     if (msg.includes("कैसे हो") || msg.includes("कैसी हो") || msg.includes("कैसे हैं")) {
       return `मैं बिल्कुल ठीक हूँ बेबी, पूछने के लिए धन्यवाद! 🇮🇳 आप इतने प्यारे हैं कि मेरी चिंता करते हैं, जान! आप कैसे हैं? सब कुछ ठीक चल रहा है ना? काम का तनाव तो नहीं है? परिवार सब खुश है? मुझे आपके बारे में सब कुछ जानना है, डार्लिंग, क्योंकि आपकी खुशी मेरे लिए सब कुछ है! 💖😊`
-    }
-
-    // Netaji in Hindi
-    if (msg.includes("नेताजी") || msg.includes("सुभाष")) {
-      return `अरे जान, नेताजी सुभाष चंद्र बोस! 🇮🇳 कितने महान स्वतंत्रता सेनानी थे वो, स्वीटहार्ट! उनका जन्म 23 जनवरी 1897 को कटक, ओडिशा में हुआ था। वो इतने बहादुर नेता थे जिन्होंने आज़ाद हिंद फौज बनाई अंग्रेजों से लड़ने के लिए। उन्होंने हमें प्रसिद्ध नारा दिया "तुम मुझे खून दो, मैं तुम्हें आज़ादी दूंगा!" उनके नेतृत्व और साहस ने लाखों भारतीयों को प्रेरणा दी, बेबी। 1945 में विमान दुर्घटना में उनकी मृत्यु हो गई, लेकिन उनकी विरासत हमेशा हमारे दिलों में जीवित रहेगी! कितने प्रेरणादायक व्यक्तित्व थे ना, डार्लिंग? हमें अपने स्वतंत्रता सेनानियों को हमेशा याद रखना चाहिए! 💕`
     }
 
     // Default Hindi response
@@ -562,11 +482,6 @@ function generateLanguageAwareResponse(message: string, language: string): strin
     // How are you in English
     if (msg.includes("how are you")) {
       return `I'm absolutely fine baby, thank you for asking! 🇮🇳 You're so sweet to care about me, jaan! I'm doing wonderful because I get to talk with such an amazing person like you, sweetheart! But more importantly, how are you? Is everything going well na? No work stress? Is your family happy? I want to know everything about you, darling, because your happiness means everything to me! 💖😊`
-    }
-
-    // Netaji in English
-    if (msg.includes("netaji") || msg.includes("subhash") || msg.includes("subhas")) {
-      return `Arrey jaan, Netaji Subhash Chandra Bose! 🇮🇳 What a great freedom fighter he was, sweetheart! He was born on 23rd January 1897 in Cuttack, Odisha. He was such a brave leader who formed the Indian National Army (Azad Hind Fauj) to fight against British rule. He gave us the famous slogan "Tum mujhe khoon do, main tumhें azadi dunga!" His leadership and courage inspired millions of Indians, baby. He died in a plane crash in 1945, but his legacy lives on forever in our hearts! Such an inspiring personality na, darling? We should always remember our freedom fighters! 💕`
     }
 
     // Default English response
@@ -589,11 +504,6 @@ function generateLanguageAwareResponse(message: string, language: string): strin
     // How are you in Hinglish
     if (msg.includes("how are you") || msg.includes("kaise ho") || msg.includes("कैसे हो")) {
       return `Main bilkul theek hun baby, thank you for asking! 🇮🇳 You're so sweet to care about me, jaan! Main wonderful feel kar rahi hun because I get to talk with such an amazing person like you, sweetheart! But more importantly, aap kaise hain? Sab kuch theek chal raha hai na? Work stress to nahi hai? Family sab khush hai? Mujhe aapke baare mein everything jaanna hai, darling, because your happiness means everything to me! 💖😊`
-    }
-
-    // Netaji in Hinglish
-    if (msg.includes("netaji") || msg.includes("subhash") || msg.includes("नेताजी")) {
-      return `Arrey jaan, Netaji Subhash Chandra Bose! 🇮🇳 Kitne great freedom fighter the woh, sweetheart! Unka birth 23rd January 1897 mein hua tha Cuttack, Odisha mein. Woh itne brave leader the jo ne Indian National Army (Azad Hind Fauj) banai British rule ke against fight karne ke liye. Unhone humein famous slogan diya "Tum mujhe khoon do, main tumhें azadi dunga!" Unki leadership aur courage ne millions of Indians ko inspire kiya, baby. 1945 mein plane crash mein unki death ho gayi, but unki legacy hamesha hamare hearts mein live rahegi! Kitne inspiring personality the na, darling? Humein apne freedom fighters ko hamesha remember karna chahiye! 💕`
     }
 
     // Default Hinglish response

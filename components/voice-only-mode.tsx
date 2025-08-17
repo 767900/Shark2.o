@@ -20,6 +20,7 @@ export default function VoiceOnlyMode({ onSendMessage, isLoading, onBack }: Voic
   const [isProcessing, setIsProcessing] = useState(false)
   const [isSupported, setIsSupported] = useState(false)
   const [permissionGranted, setPermissionGranted] = useState(false)
+  const [lastResponse, setLastResponse] = useState("")
   const recognitionRef = useRef<any>(null)
   const utteranceRef = useRef<any>(null)
   const isSpeakingRef = useRef(false)
@@ -206,30 +207,46 @@ export default function VoiceOnlyMode({ onSendMessage, isLoading, onBack }: Voic
 
       console.log("🚀 Sending voice query to AI:", query)
 
-      const response = await fetch("/api/chat", {
+      // Enhanced fetch with better error handling for mobile
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 30000) // 30 second timeout
+
+      const response = await fetch("/api/voice", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "User-Agent": "Shark2.0-Mobile/1.0",
+        },
         body: JSON.stringify({
-          messages: [{ role: "user", content: query }],
+          message: query,
         }),
+        signal: controller.signal,
       })
+
+      clearTimeout(timeoutId)
 
       if (response.ok) {
         const data = await response.json()
         const aiResponse = data.content || "Sorry, I didn't get a response."
 
         console.log("✅ AI response received:", aiResponse.substring(0, 100) + "...")
+        setLastResponse(aiResponse)
 
         setStatus("🔊 Shark 2.0 is speaking...")
         speakResponse(aiResponse)
       } else {
-        console.error("❌ API response error:", response.status)
+        const errorText = await response.text()
+        console.error("❌ API response error:", response.status, errorText)
         setStatus("❌ API error. Tap flag to try again!")
         setIsProcessing(false)
       }
     } catch (error) {
       console.error("💥 Voice query error:", error)
-      setStatus("❌ Connection error. Tap flag to retry!")
+      if (error.name === "AbortError") {
+        setStatus("⏰ Request timeout. Check your connection and try again!")
+      } else {
+        setStatus("❌ Connection error. Tap flag to retry!")
+      }
       setIsProcessing(false)
     }
   }
@@ -272,11 +289,25 @@ export default function VoiceOnlyMode({ onSendMessage, isLoading, onBack }: Voic
         utteranceRef.current = utterance
         isSpeakingRef.current = true
 
-        // Optimized voice settings
+        // Optimized voice settings for mobile
         utterance.rate = 0.9
         utterance.pitch = 1.0
         utterance.volume = 1.0
         utterance.lang = "en-US"
+
+        // Try to select a female voice if available
+        const voices = window.speechSynthesis.getVoices()
+        const femaleVoice = voices.find(
+          (voice) =>
+            voice.lang.startsWith("en") &&
+            (voice.name.toLowerCase().includes("female") ||
+              voice.name.toLowerCase().includes("woman") ||
+              voice.name.toLowerCase().includes("samantha") ||
+              voice.name.toLowerCase().includes("karen")),
+        )
+        if (femaleVoice) {
+          utterance.voice = femaleVoice
+        }
 
         utterance.onstart = () => {
           console.log("🔊 Speech synthesis started")
@@ -665,6 +696,13 @@ export default function VoiceOnlyMode({ onSendMessage, isLoading, onBack }: Voic
                 <strong>You said:</strong> "{transcript}"
               </div>
             )}
+
+            {lastResponse && !isProcessing && !isSpeaking && (
+              <div className="text-sm bg-black/30 p-3 rounded-lg mt-3 max-h-32 overflow-y-auto">
+                <strong>AI Response:</strong> {lastResponse.substring(0, 200)}
+                {lastResponse.length > 200 && "..."}
+              </div>
+            )}
           </div>
         </motion.div>
 
@@ -696,7 +734,7 @@ export default function VoiceOnlyMode({ onSendMessage, isLoading, onBack }: Voic
               </p>
             </div>
             <div className="mt-3 text-xs text-yellow-400">
-              💡 <strong>Tip:</strong> Speak loudly and clearly for best results!
+              💡 <strong>Mobile Tip:</strong> Ensure stable internet connection for best results!
             </div>
           </div>
         </div>
