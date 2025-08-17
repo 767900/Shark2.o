@@ -155,8 +155,6 @@ export default function AIWebChat() {
 
       // Save to chat history after successful conversation
       ChatStorage.saveSession(updatedMessages)
-
-      // No voice output in text mode - removed voice functionality from chat
     } catch (error) {
       console.error("💥 CLIENT: Error in handleSendMessage:", error)
 

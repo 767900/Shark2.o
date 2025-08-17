@@ -1,7 +1,8 @@
 "use client"
 
 import { motion } from "framer-motion"
-import { User, Bot, AlertCircle } from "lucide-react"
+import { Copy, ThumbsUp, ThumbsDown } from "lucide-react"
+import { Button } from "@/components/ui/button"
 import Citations from "@/components/citations"
 import RelatedQuestions from "@/components/related-questions"
 import type { Message } from "@/types/chat"
@@ -35,7 +36,7 @@ const formatTimestamp = (timestamp: any): string => {
       hour12: true,
     })
   } catch (error) {
-    console.warn("Error formatting timestamp:", error)
+    console.error("Error formatting timestamp:", error)
     return new Date().toLocaleTimeString([], {
       hour: "2-digit",
       minute: "2-digit",
@@ -48,6 +49,14 @@ export default function MessageBubble({ message, onRelatedQuestionClick }: Messa
   const isUser = message.role === "user"
   const isError = message.isError
 
+  const copyToClipboard = async () => {
+    try {
+      await navigator.clipboard.writeText(message.content)
+    } catch (error) {
+      console.error("Failed to copy:", error)
+    }
+  }
+
   return (
     <motion.div
       className={`flex ${isUser ? "justify-end" : "justify-start"} mb-4`}
@@ -55,41 +64,44 @@ export default function MessageBubble({ message, onRelatedQuestionClick }: Messa
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
     >
-      <div className={`flex ${isUser ? "flex-row-reverse" : "flex-row"} items-start gap-3 max-w-[85%]`}>
+      <div className={`flex items-start gap-3 max-w-[85%] ${isUser ? "flex-row-reverse" : "flex-row"}`}>
         {/* Avatar */}
         <motion.div
-          className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
+          className={`w-8 h-8 rounded-full flex items-center justify-center text-lg flex-shrink-0 ${
             isUser
-              ? "bg-gradient-to-r from-blue-500 to-purple-500"
+              ? "bg-gradient-to-r from-cyan-500 to-purple-500"
               : isError
                 ? "bg-gradient-to-r from-red-500 to-orange-500"
                 : "bg-gradient-to-r from-green-500 to-teal-500"
-          } text-white shadow-lg`}
-          whileHover={{ scale: 1.1 }}
-          transition={{ type: "spring", stiffness: 300 }}
+          }`}
+          animate={
+            !isUser && !isError
+              ? {
+                  boxShadow: [
+                    "0 0 5px rgba(20, 184, 166, 0.5)",
+                    "0 0 20px rgba(20, 184, 166, 0.8)",
+                    "0 0 5px rgba(20, 184, 166, 0.5)",
+                  ],
+                }
+              : {}
+          }
+          transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY }}
         >
-          {isUser ? (
-            <User className="w-4 h-4" />
-          ) : isError ? (
-            <AlertCircle className="w-4 h-4" />
-          ) : (
-            <Bot className="w-4 h-4" />
-          )}
+          {isUser ? "👤" : isError ? "⚠️" : "🦈"}
         </motion.div>
 
         {/* Message Content */}
         <div className={`flex flex-col ${isUser ? "items-end" : "items-start"}`}>
-          {/* Message Bubble */}
           <motion.div
-            className={`relative px-4 py-3 rounded-2xl shadow-lg backdrop-blur-md border ${
+            className={`px-4 py-3 rounded-2xl backdrop-blur-md border shadow-lg ${
               isUser
                 ? "bg-black/80 text-white border-white/20 rounded-br-md"
                 : isError
-                  ? "bg-black/85 text-red-100 border-red-500/30 rounded-bl-md"
+                  ? "bg-black/85 text-red-200 border-red-400/30 rounded-bl-md"
                   : "bg-black/85 text-white border-white/20 rounded-bl-md"
             }`}
             whileHover={{ scale: 1.02 }}
-            transition={{ type: "spring", stiffness: 300 }}
+            transition={{ duration: 0.2 }}
           >
             {/* Message Text */}
             <div className="prose prose-invert max-w-none">
@@ -100,17 +112,56 @@ export default function MessageBubble({ message, onRelatedQuestionClick }: Messa
               ))}
             </div>
 
-            {/* Image indicator */}
-            {message.hasImage && (
-              <div className="mt-2 text-xs opacity-70 flex items-center gap-1">📷 Image attached</div>
+            {/* Voice Indicator */}
+            {message.isVoice && (
+              <div className="flex items-center gap-1 mt-2 text-xs text-white/60">
+                <span>🎤</span>
+                <span>Voice message</span>
+              </div>
             )}
 
-            {/* Voice indicator */}
-            {message.isVoice && <div className="mt-2 text-xs opacity-70 flex items-center gap-1">🎤 Voice message</div>}
+            {/* Image Indicator */}
+            {message.hasImage && (
+              <div className="flex items-center gap-1 mt-2 text-xs text-white/60">
+                <span>📸</span>
+                <span>Image attached</span>
+              </div>
+            )}
+
+            {/* Action Buttons */}
+            {!isUser && (
+              <div className="flex items-center gap-2 mt-3 pt-2 border-t border-white/10">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={copyToClipboard}
+                  className="text-white/60 hover:text-white hover:bg-white/10 p-1 h-auto"
+                  title="Copy message"
+                >
+                  <Copy className="w-3 h-3" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-white/60 hover:text-white hover:bg-white/10 p-1 h-auto"
+                  title="Good response"
+                >
+                  <ThumbsUp className="w-3 h-3" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-white/60 hover:text-white hover:bg-white/10 p-1 h-auto"
+                  title="Poor response"
+                >
+                  <ThumbsDown className="w-3 h-3" />
+                </Button>
+              </div>
+            )}
           </motion.div>
 
           {/* Timestamp */}
-          <div className={`text-xs text-white/60 mt-1 ${isUser ? "text-right" : "text-left"}`}>
+          <div className={`text-xs text-white/50 mt-1 px-1 ${isUser ? "text-right" : "text-left"}`}>
             {formatTimestamp(message.timestamp)}
           </div>
 
