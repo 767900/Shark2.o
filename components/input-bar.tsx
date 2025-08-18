@@ -3,8 +3,7 @@
 import type React from "react"
 import { useState, useRef, useCallback } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { Send, Upload, Mic, Sparkles, Globe, X, ImageIcon } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { Send, Upload, Mic, Sparkles, Search, X } from "lucide-react"
 
 interface InputBarProps {
   inputText: string
@@ -172,58 +171,51 @@ export default function InputBar({
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
-            className="mb-3 p-3 bg-white/20 backdrop-blur-sm rounded-lg border border-white/30"
+            className="mb-3 mx-4 p-3 bg-black/30 backdrop-blur-sm rounded-lg border border-white/20"
           >
             <div className="flex items-center space-x-3">
               <div className="relative">
                 <img
                   src={imagePreview || "/placeholder.svg"}
                   alt="Selected image preview"
-                  className="w-16 h-16 object-cover rounded border border-white/30"
+                  className="w-12 h-12 object-cover rounded border border-white/30"
                 />
-                <div className="absolute -top-2 -right-2">
-                  <button
-                    onClick={handleRemoveImage}
-                    className="w-6 h-6 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center text-xs transition-colors shadow-lg"
-                    title="Remove image"
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
-                </div>
+                <button
+                  onClick={handleRemoveImage}
+                  className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center text-xs transition-colors shadow-lg"
+                  title="Remove image"
+                >
+                  <X className="w-3 h-3" />
+                </button>
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-white truncate">{selectedImage.name}</p>
-                <p className="text-xs text-white/70">
-                  {selectedImage.type} • {Math.round(selectedImage.size / 1024)}KB
-                </p>
-                <div className="mt-1 px-2 py-1 bg-green-500/20 text-green-300 rounded text-xs inline-block">
-                  ✓ Ready to send
-                </div>
+                <p className="text-xs text-white/70">{Math.round(selectedImage.size / 1024)}KB • Ready to send</p>
               </div>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Input container */}
+      {/* Lower Section - Exact match to screenshot */}
       <div
-        className="p-4 backdrop-blur-md bg-white/10 border-t border-white/20"
+        className="bg-black/40 backdrop-blur-sm border-t border-white/10"
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
       >
-        {/* Action buttons row */}
-        <div className="flex items-center justify-center gap-3 mb-3">
+        {/* Four Action Buttons Row - Exactly like screenshot */}
+        <div className="flex items-center justify-start gap-6 px-6 py-3 border-b border-white/10">
           {/* Discover Button */}
           <motion.button
             onClick={handleDiscoverClickInternal}
             disabled={isLoading}
-            className="flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-purple-500/20 to-pink-500/20 backdrop-blur-sm border border-purple-400/30 text-white hover:from-purple-500/30 hover:to-pink-500/30 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+            className="flex items-center gap-2 text-white/80 hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
             title="Discover trending topics"
           >
-            <Globe className="w-4 h-4" />
+            <Search className="w-5 h-5" />
             <span className="text-sm font-medium">Discover</span>
           </motion.button>
 
@@ -231,12 +223,12 @@ export default function InputBar({
           <motion.button
             onClick={handleUploadClick}
             disabled={isLoading}
-            className="flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-green-500/20 to-emerald-500/20 backdrop-blur-sm border border-green-400/30 text-white hover:from-green-500/30 hover:to-emerald-500/30 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+            className="flex items-center gap-2 text-white/80 hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
             title="Upload image for analysis"
           >
-            <ImageIcon className="w-4 h-4" />
+            <Upload className="w-5 h-5" />
             <span className="text-sm font-medium">Upload</span>
           </motion.button>
 
@@ -244,12 +236,12 @@ export default function InputBar({
           <motion.button
             onClick={handleVoiceClickInternal}
             disabled={isLoading}
-            className="flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-orange-500/20 to-red-500/20 backdrop-blur-sm border border-orange-400/30 text-white hover:from-orange-500/30 hover:to-red-500/30 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+            className="flex items-center gap-2 text-white/80 hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
             title="Voice chat mode"
           >
-            <Mic className="w-4 h-4" />
+            <Mic className="w-5 h-5" />
             <span className="text-sm font-medium">Voice</span>
           </motion.button>
 
@@ -257,57 +249,48 @@ export default function InputBar({
           <motion.button
             onClick={handleImagineClickInternal}
             disabled={isLoading}
-            className="flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-pink-500/20 to-purple-500/20 backdrop-blur-sm border border-pink-400/30 text-white hover:from-pink-500/30 hover:to-purple-500/30 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+            className="flex items-center gap-2 text-white/80 hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
             title="AI image generation"
           >
-            <Sparkles className="w-4 h-4" />
+            <Sparkles className="w-5 h-5" />
             <span className="text-sm font-medium">Imagine</span>
           </motion.button>
         </div>
 
-        {/* Input form */}
-        <form onSubmit={handleSubmit} className="flex items-end gap-3">
-          <div className="flex-1 relative">
-            <textarea
-              value={inputText}
-              onChange={(e) => setInputText(e.target.value)}
-              onKeyPress={handleKeyPress}
-              placeholder={
-                selectedImage ? "Ask me about this image..." : "Ask me anything... (or drag & drop an image)"
-              }
-              className="w-full px-4 py-3 pr-12 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20 text-white placeholder-white/60 resize-none focus:outline-none focus:ring-2 focus:ring-blue-400/50 focus:border-transparent min-h-[50px] max-h-32"
-              rows={1}
-              disabled={isLoading}
-              style={{
-                scrollbarWidth: "thin",
-                scrollbarColor: "rgba(255,255,255,0.3) transparent",
-              }}
-            />
-          </div>
+        {/* Input Section - Updated placeholder text */}
+        <div className="px-6 py-4">
+          <form onSubmit={handleSubmit} className="flex items-center gap-3">
+            <div className="flex-1 relative">
+              <input
+                type="text"
+                value={inputText}
+                onChange={(e) => setInputText(e.target.value)}
+                onKeyPress={handleKeyPress}
+                placeholder={selectedImage ? "Ask me about this image..." : "What you want to explore"}
+                className="w-full px-4 py-3 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-white/40 text-sm"
+                disabled={isLoading}
+              />
+            </div>
 
-          <Button
-            type="submit"
-            disabled={!canSend}
-            className={`h-[50px] w-[50px] rounded-full border-0 shadow-lg flex items-center justify-center transition-all duration-200 ${
-              canSend
-                ? "bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 hover:scale-105"
-                : "bg-gray-500/50 cursor-not-allowed opacity-50"
-            }`}
-            title={selectedImage ? "Send message with image" : "Send message"}
-          >
-            <Send className="w-5 h-5 text-white" />
-          </Button>
-        </form>
-
-        {/* Image indicator in input */}
-        {selectedImage && (
-          <div className="mt-2 text-xs text-white/70 flex items-center gap-1">
-            <ImageIcon className="w-3 h-3" />
-            <span>Image ready • Click send or add a message</span>
-          </div>
-        )}
+            {/* Send Button - Circular, positioned like screenshot */}
+            <motion.button
+              type="submit"
+              disabled={!canSend}
+              className={`w-12 h-12 rounded-full flex items-center justify-center transition-all duration-200 ${
+                canSend
+                  ? "bg-blue-500 hover:bg-blue-600 text-white shadow-lg"
+                  : "bg-gray-500/30 text-white/40 cursor-not-allowed"
+              }`}
+              whileHover={canSend ? { scale: 1.05 } : {}}
+              whileTap={canSend ? { scale: 0.95 } : {}}
+              title={selectedImage ? "Send message with image" : "Send message"}
+            >
+              <Send className="w-5 h-5" />
+            </motion.button>
+          </form>
+        </div>
       </div>
     </div>
   )
