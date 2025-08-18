@@ -11,7 +11,7 @@ import VoiceOnlyMode from "@/components/voice-only-mode"
 import DiscoverPage from "@/components/discover-page"
 import ImaginePage from "@/components/imagine-page"
 import ChatHistory from "@/components/chat-history"
-import { loadChatHistory, saveSession } from "@/lib/chat-storage"
+import { saveSession } from "@/lib/chat-storage"
 import type { Message } from "@/types/chat"
 
 const getRandomWelcomeMessage = () => {
@@ -29,9 +29,10 @@ const getRandomWelcomeMessage = () => {
 }
 
 export default function AIWebChat() {
+  // Always start with a fresh welcome message
   const [messages, setMessages] = useState<Message[]>([
     {
-      id: "1",
+      id: "welcome-" + Date.now(),
       content: getRandomWelcomeMessage(),
       role: "assistant",
       timestamp: new Date(),
@@ -63,18 +64,10 @@ export default function AIWebChat() {
     return () => window.removeEventListener("resize", checkMobile)
   }, [])
 
-  // Load chat history on component mount
+  // Always start fresh - no loading of previous chat history
   useEffect(() => {
-    try {
-      const savedMessages = loadChatHistory()
-      if (savedMessages.length > 0) {
-        console.log("📚 Loaded", savedMessages.length, "messages from history")
-        setMessages(savedMessages)
-      }
-    } catch (error) {
-      console.error("❌ Failed to load chat history:", error)
-      // Keep the welcome message if loading fails
-    }
+    console.log("🚀 Starting fresh Shark 2.0 session")
+    // We intentionally don't load chat history here to always start fresh
   }, [])
 
   const scrollToBottom = () => {
@@ -217,7 +210,7 @@ export default function AIWebChat() {
 
     setMessages([
       {
-        id: "1",
+        id: "welcome-" + Date.now(),
         content: getRandomWelcomeMessage(),
         role: "assistant",
         timestamp: new Date(),
@@ -228,6 +221,7 @@ export default function AIWebChat() {
   const handleLoadHistorySession = (sessionMessages: Message[]) => {
     setMessages(sessionMessages)
     setIsHistoryOpen(false)
+    console.log("📚 Loaded chat session with", sessionMessages.length, "messages")
   }
 
   const handleDiscoverClick = () => {

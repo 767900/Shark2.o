@@ -1,9 +1,12 @@
 "use client"
 
 import type React from "react"
+
 import { useState, useRef, useCallback } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { Send, Upload, Mic, Sparkles, Search, X } from "lucide-react"
+import { Send, Mic, Upload, Sparkles, Search, X, ImageIcon } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import ImageUpload from "@/components/image-upload"
 
 interface InputBarProps {
   inputText: string
@@ -26,26 +29,25 @@ export default function InputBar({
   onVoiceModeClick,
   onImageGenerationClick,
 }: InputBarProps) {
-  const [isDragOver, setIsDragOver] = useState(false)
+  const [isListening, setIsListening] = useState(false)
+  const [showImageUpload, setShowImageUpload] = useState(false)
   const [selectedImage, setSelectedImage] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   const handleSubmit = useCallback(
     (e: React.FormEvent) => {
       e.preventDefault()
-      if ((inputText.trim() || selectedImage) && !isLoading) {
-        onSendMessage(inputText.trim(), false, selectedImage || undefined)
+      if (selectedImage || inputText.trim()) {
+        onSendMessage(inputText, false, selectedImage || undefined)
         setInputText("")
-        // Clear image after sending
         setSelectedImage(null)
         setImagePreview(null)
-        if (fileInputRef.current) {
-          fileInputRef.current.value = ""
-        }
+        setShowImageUpload(false)
       }
     },
-    [inputText, selectedImage, isLoading, onSendMessage, setInputText],
+    [inputText, selectedImage, onSendMessage, setInputText],
   )
 
   const handleKeyPress = useCallback(
@@ -59,239 +61,194 @@ export default function InputBar({
   )
 
   const handleImageSelect = useCallback((file: File) => {
-    if (file && file.type.startsWith("image/")) {
-      console.log("📁 Image selected for preview:", file.name)
-      setSelectedImage(file)
+    setSelectedImage(file)
+    const previewUrl = URL.createObjectURL(file)
+    setImagePreview(previewUrl)
+    setShowImageUpload(false)
+    console.log("📸 Image selected:", file.name, file.type, Math.round(file.size / 1024) + "KB")
+  }, [])
 
-      // Create preview URL
-      const reader = new FileReader()
-      reader.onload = (e) => {
-        if (e.target?.result) {
-          setImagePreview(e.target.result as string)
-        }
-      }
-      reader.readAsDataURL(file)
-    } else {
-      console.warn("⚠️ Invalid file type. Please select an image.")
-    }
+  const handleImageUploadClick = useCallback(() => {
+    setShowImageUpload(true)
   }, [])
 
   const handleRemoveImage = useCallback(() => {
-    console.log("🗑️ Image removed from preview")
     setSelectedImage(null)
-    setImagePreview(null)
-    if (fileInputRef.current) {
-      fileInputRef.current.value = ""
+    if (imagePreview) {
+      URL.revokeObjectURL(imagePreview)
+      setImagePreview(null)
     }
-  }, [])
+  }, [imagePreview])
 
-  const handleUploadClick = useCallback(() => {
-    console.log("🟢 Upload button clicked")
-    fileInputRef.current?.click()
-  }, [])
-
-  const handleFileChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0]
-      if (file) {
-        handleImageSelect(file)
-      }
-    },
-    [handleImageSelect],
-  )
-
-  const handleDragOver = useCallback((e: React.DragEvent) => {
-    e.preventDefault()
-    setIsDragOver(true)
-  }, [])
-
-  const handleDragLeave = useCallback((e: React.DragEvent) => {
-    e.preventDefault()
-    setIsDragOver(false)
-  }, [])
-
-  const handleDrop = useCallback(
-    (e: React.DragEvent) => {
-      e.preventDefault()
-      setIsDragOver(false)
-
-      const files = Array.from(e.dataTransfer.files)
-      const imageFile = files.find((file) => file.type.startsWith("image/"))
-
-      if (imageFile) {
-        handleImageSelect(imageFile)
-      }
-    },
-    [handleImageSelect],
-  )
-
-  const handleDiscoverClickInternal = useCallback(() => {
-    console.log("🟣 Discover button clicked internally")
-    onDiscoverClick()
-  }, [onDiscoverClick])
-
-  const handleVoiceClickInternal = useCallback(() => {
-    console.log("🟠 Voice button clicked internally")
+  const handleVoiceClick = useCallback(() => {
+    console.log("🎤 Voice button clicked")
     onVoiceModeClick()
   }, [onVoiceModeClick])
 
-  const handleImagineClickInternal = useCallback(() => {
-    console.log("🟣 Imagine button clicked internally")
-    onImageGenerationClick()
-  }, [onImageGenerationClick])
-
-  const canSend = (inputText.trim() || selectedImage) && !isLoading
-
   return (
-    <div className="relative">
-      {/* Hidden file input */}
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="image/*"
-        onChange={handleFileChange}
-        className="hidden"
-        aria-label="Upload image"
-      />
-
-      {/* Drag overlay */}
-      {isDragOver && (
-        <div className="absolute inset-0 bg-blue-500/20 border-2 border-dashed border-blue-400 rounded-lg flex items-center justify-center z-50">
-          <div className="text-white text-center">
-            <Upload className="w-8 h-8 mx-auto mb-2" />
-            <p className="text-sm font-medium">Drop image here to preview</p>
-          </div>
-        </div>
-      )}
-
-      {/* Image Preview */}
-      <AnimatePresence>
-        {selectedImage && imagePreview && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            className="mb-3 mx-4 p-3 bg-black/30 backdrop-blur-sm rounded-lg border border-white/20"
-          >
-            <div className="flex items-center space-x-3">
-              <div className="relative">
-                <img
-                  src={imagePreview || "/placeholder.svg"}
-                  alt="Selected image preview"
-                  className="w-12 h-12 object-cover rounded border border-white/30"
-                />
-                <button
-                  onClick={handleRemoveImage}
-                  className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center text-xs transition-colors shadow-lg"
-                  title="Remove image"
-                >
-                  <X className="w-3 h-3" />
-                </button>
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-white truncate">{selectedImage.name}</p>
-                <p className="text-xs text-white/70">{Math.round(selectedImage.size / 1024)}KB • Ready to send</p>
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Lower Section - Exact match to screenshot */}
-      <div
-        className="bg-black/40 backdrop-blur-sm border-t border-white/10"
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onDrop={handleDrop}
-      >
-        {/* Four Action Buttons Row - Exactly like screenshot */}
-        <div className="flex items-center justify-start gap-6 px-6 py-3 border-b border-white/10">
+    <>
+      <div className="relative">
+        {/* Action Buttons Row */}
+        <div className="flex items-center justify-center gap-4 p-4 bg-black/20 backdrop-blur-sm border-t border-white/10">
           {/* Discover Button */}
           <motion.button
-            onClick={handleDiscoverClickInternal}
-            disabled={isLoading}
-            className="flex items-center gap-2 text-white/80 hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
+            onClick={onDiscoverClick}
+            className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-full border border-white/20 text-white transition-all duration-200"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
             title="Discover trending topics"
           >
-            <Search className="w-5 h-5" />
+            <Search className="w-4 h-4" />
             <span className="text-sm font-medium">Discover</span>
           </motion.button>
 
           {/* Upload Button */}
           <motion.button
-            onClick={handleUploadClick}
-            disabled={isLoading}
-            className="flex items-center gap-2 text-white/80 hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            title="Upload image for analysis"
+            onClick={handleImageUploadClick}
+            className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-full border border-white/20 text-white transition-all duration-200"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            title="Upload and analyze images"
           >
-            <Upload className="w-5 h-5" />
+            <Upload className="w-4 h-4" />
             <span className="text-sm font-medium">Upload</span>
           </motion.button>
 
           {/* Voice Button */}
           <motion.button
-            onClick={handleVoiceClickInternal}
-            disabled={isLoading}
-            className="flex items-center gap-2 text-white/80 hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
+            onClick={handleVoiceClick}
+            className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-full border border-white/20 text-white transition-all duration-200"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
             title="Voice chat mode"
           >
-            <Mic className="w-5 h-5" />
+            <Mic className="w-4 h-4" />
             <span className="text-sm font-medium">Voice</span>
           </motion.button>
 
           {/* Imagine Button */}
           <motion.button
-            onClick={handleImagineClickInternal}
-            disabled={isLoading}
-            className="flex items-center gap-2 text-white/80 hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            title="AI image generation"
+            onClick={onImageGenerationClick}
+            className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-full border border-white/20 text-white transition-all duration-200"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            title="Generate AI images"
           >
-            <Sparkles className="w-5 h-5" />
+            <Sparkles className="w-4 h-4" />
             <span className="text-sm font-medium">Imagine</span>
           </motion.button>
         </div>
 
-        {/* Input Section - Updated placeholder text */}
-        <div className="px-6 py-4">
-          <form onSubmit={handleSubmit} className="flex items-center gap-3">
+        {/* Image Preview */}
+        <AnimatePresence>
+          {imagePreview && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 20 }}
+              className="mx-4 mb-2 p-3 bg-black/40 backdrop-blur-sm rounded-lg border border-white/20"
+            >
+              <div className="flex items-center gap-3">
+                <div className="relative">
+                  <img
+                    src={imagePreview || "/placeholder.svg"}
+                    alt="Selected image"
+                    className="w-16 h-16 object-cover rounded-lg border border-white/20"
+                  />
+                  <button
+                    onClick={handleRemoveImage}
+                    className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 hover:bg-red-600 rounded-full flex items-center justify-center text-white text-xs transition-colors"
+                    title="Remove image"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+                <div className="flex-1">
+                  <p className="text-white text-sm font-medium">Image ready to send</p>
+                  <p className="text-white/60 text-xs">
+                    {selectedImage?.name} ({Math.round((selectedImage?.size || 0) / 1024)}KB)
+                  </p>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Input Area */}
+        <form onSubmit={handleSubmit} className="relative">
+          <div className="flex items-end gap-2 p-4 bg-black/20 backdrop-blur-sm border-t border-white/10">
             <div className="flex-1 relative">
-              <input
-                type="text"
+              <textarea
+                ref={textareaRef}
                 value={inputText}
                 onChange={(e) => setInputText(e.target.value)}
                 onKeyPress={handleKeyPress}
-                placeholder={selectedImage ? "Ask me about this image..." : "What you want to explore"}
-                className="w-full px-4 py-3 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-white/40 text-sm"
+                placeholder="What you want to explore"
+                className="w-full bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl px-4 py-3 pr-12 text-white placeholder-white/60 resize-none focus:outline-none focus:ring-2 focus:ring-cyan-400/50 focus:border-cyan-400/50 transition-all duration-200 min-h-[50px] max-h-32"
+                rows={1}
                 disabled={isLoading}
+                style={{
+                  scrollbarWidth: "thin",
+                  scrollbarColor: "rgba(255,255,255,0.3) transparent",
+                }}
               />
             </div>
 
-            {/* Send Button - Circular, positioned like screenshot */}
-            <motion.button
+            {/* Send Button */}
+            <Button
               type="submit"
-              disabled={!canSend}
-              className={`w-12 h-12 rounded-full flex items-center justify-center transition-all duration-200 ${
-                canSend
-                  ? "bg-blue-500 hover:bg-blue-600 text-white shadow-lg"
-                  : "bg-gray-500/30 text-white/40 cursor-not-allowed"
-              }`}
-              whileHover={canSend ? { scale: 1.05 } : {}}
-              whileTap={canSend ? { scale: 0.95 } : {}}
-              title={selectedImage ? "Send message with image" : "Send message"}
+              disabled={isLoading || (!inputText.trim() && !selectedImage)}
+              className="bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 disabled:from-gray-500 disabled:to-gray-600 text-white border-0 rounded-2xl px-4 py-3 h-[50px] transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50"
             >
-              <Send className="w-5 h-5" />
-            </motion.button>
-          </form>
-        </div>
+              {isLoading ? (
+                <motion.div
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 1, repeat: Number.POSITIVE_INFINITY, ease: "linear" }}
+                  className="w-5 h-5 border-2 border-white border-t-transparent rounded-full"
+                />
+              ) : (
+                <Send className="w-5 h-5" />
+              )}
+            </Button>
+          </div>
+        </form>
       </div>
-    </div>
+
+      {/* Image Upload Modal */}
+      <AnimatePresence>
+        {showImageUpload && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+            onClick={() => setShowImageUpload(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-black/80 backdrop-blur-md rounded-2xl border border-white/20 p-6 max-w-md w-full"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                  <ImageIcon className="w-5 h-5" />
+                  Upload Image
+                </h3>
+                <button
+                  onClick={() => setShowImageUpload(false)}
+                  className="text-white/60 hover:text-white transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <ImageUpload onImageSelect={handleImageSelect} />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
   )
 }
