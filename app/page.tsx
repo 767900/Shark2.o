@@ -16,14 +16,31 @@ import type { Message } from "@/types/chat"
 
 const getRandomWelcomeMessage = () => {
   const welcomeMessages = [
-    "Hello! I'm Shark 2.0. How can I help you today?",
-    "Hi there! I'm ready to assist you. What would you like to know?",
-    "Namaste! I'm Shark 2.0, your AI assistant. What can I do for you?",
-    "Welcome! I'm here to help with any questions you have.",
-    "Hey! I'm Shark 2.0. Ready to help you with anything!",
-    "Hi! I'm your AI assistant. What would you like to explore today?",
-    "Hello! I'm Shark 2.0 from India. How may I assist you?",
-    "Greetings! I'm ready to help. What's on your mind?",
+    "Hello! I'm 𝕏𝕪𝕝𝕠𝔾𝕖𝕟. What would you like to explore today?",
+    "𝕏𝕪𝕝𝕠𝔾𝕖𝕟 is always ready for you, would you like to dive into it?",
+    "Hi there! 𝕏𝕪𝕝𝕠𝔾𝕖𝕟 here, your intelligent companion. How can I assist you?",
+    "Namaste! I'm 𝕏𝕪𝕝𝕠𝔾𝕖𝕟, ready to unlock knowledge with you. What's on your mind?",
+    "Welcome to 𝕏𝕪𝕝𝕠𝔾𝕖𝕟! Let's embark on a journey of discovery together.",
+    "Greetings! 𝕏𝕪𝕝𝕠𝔾𝕖𝕟 at your service. What fascinating topic shall we explore?",
+    "Hey! 𝕏𝕪𝕝𝕠𝔾𝕖𝕟 here, powered by curiosity and ready for any challenge!",
+    "Hello friend! I'm 𝕏𝕪𝕝𝕠𝔾𝕖𝕟, your AI guide. Where shall our conversation take us?",
+    "𝕏𝕪𝕝𝕠𝔾𝕖𝕟 reporting for duty! What mysteries would you like to unravel today?",
+    "Hi! I'm 𝕏𝕪𝕝𝕠𝔾𝕖𝕟, your digital companion from India. How may I enlighten you?",
+    "Welcome aboard! 𝕏𝕪𝕝𝕠𝔾𝕖𝕟 is here to make your day more interesting. What's up?",
+    "Salutations! I'm 𝕏𝕪𝕝𝕠𝔾𝕖𝕟, ready to dive deep into any topic you choose.",
+    "Hello there! 𝕏𝕪𝕝𝕠𝔾𝕖𝕟 at your fingertips, eager to help and learn with you.",
+    "𝕏𝕪𝕝𝕠𝔾𝕖𝕟 here! Think of me as your personal knowledge navigator. Where to?",
+    "Greetings, explorer! I'm 𝕏𝕪𝕝𝕠𝔾𝕖𝕟, ready to venture into the unknown with you.",
+    "Hi! 𝕏𝕪𝕝𝕠𝔾𝕖𝕟 speaking - your AI friend who's always excited to chat and help!",
+    "Welcome! I'm 𝕏𝕪𝕝𝕠𝔾𝕖𝕟, designed to make every conversation meaningful. Let's begin!",
+    "Hello! 𝕏𝕪𝕝𝕠𝔾𝕖𝕟 here, your intelligent assistant ready for any adventure in knowledge.",
+    "𝕏𝕪𝕝𝕠𝔾𝕖𝕟 at your service! Ready to transform curiosity into understanding. What's your question?",
+    "Hey there! I'm 𝕏𝕪𝕝𝕠𝔾𝕖𝕟, your AI companion who loves exploring ideas with you.",
+    "Namaste! 𝕏𝕪𝕝𝕠𝔾𝕖𝕟 here, blending technology with wisdom. How can I serve you today?",
+    "Hello! I'm 𝕏𝕪𝕝𝕠𝔾𝕖𝕟, your digital guide through the vast landscape of knowledge.",
+    "𝕏𝕪𝕝𝕠𝔾𝕖𝕟 online and ready! Let's turn your questions into fascinating discoveries.",
+    "Greetings! I'm 𝕏𝕪𝕝𝕠𝔾𝕖𝕟, your AI partner in learning and exploration. What intrigues you?",
+    "Hi! 𝕏𝕪𝕝𝕠𝔾𝕖𝕟 here - think of me as your personal research assistant and friend combined!",
   ]
   return welcomeMessages[Math.floor(Math.random() * welcomeMessages.length)]
 }
@@ -42,7 +59,7 @@ export default function AIWebChat() {
   const [isLoading, setIsLoading] = useState(false)
   const [lastAiMessage, setLastAiMessage] = useState<string>("")
   const [isSpeaking, setIsSpeaking] = useState(false)
-  const [currentProvider, setCurrentProvider] = useState<string>("Smart Assistant Ready 🧠")
+  const [currentProvider, setCurrentProvider] = useState<string>("𝕏𝕪𝕝𝕠𝔾𝕖𝕟 Ready 🧠")
   const [isVoiceMode, setIsVoiceMode] = useState(false)
   const [isDiscoverMode, setIsDiscoverMode] = useState(false)
   const [isImagineMode, setIsImagineMode] = useState(false)
@@ -66,7 +83,7 @@ export default function AIWebChat() {
 
   // Always start fresh - no loading of previous chat history
   useEffect(() => {
-    console.log("🚀 Starting fresh Shark 2.0 session")
+    console.log("🚀 Starting fresh 𝕏𝕪𝕝𝕠𝔾𝕖𝕟 session")
     // We intentionally don't load chat history here to always start fresh
   }, [])
 
@@ -99,7 +116,7 @@ export default function AIWebChat() {
     setIsSpeaking(false)
 
     try {
-      console.log("🚀 CLIENT: Sending message to Shark 2.0:", message)
+      console.log("🚀 CLIENT: Sending message to 𝕏𝕪𝕝𝕠𝔾𝕖𝕟:", message)
       if (image) {
         console.log("📸 CLIENT: Including image:", image.name, image.type, Math.round(image.size / 1024) + "KB")
       }
@@ -175,7 +192,7 @@ export default function AIWebChat() {
 
       const errorMessage: Message = {
         id: Date.now().toString(),
-        content: `🦈 **Shark 2.0 - Smart Response** 🦈\n\n**Your question:** "${message}"\n\nI'm working in smart mode and ready to help! While I may not have real-time data, I can still provide intelligent answers on many topics.\n\n**I can help with:**\n• Programming and technology\n• Indian culture and knowledge\n• Educational topics\n• Problem-solving and analysis\n• General knowledge\n• Image analysis (with SERP API integration)\n\n🚀 **Try asking me about specific topics I can explain!** 🇮🇳`,
+        content: `🔮 **𝕏𝕪𝕝𝕠𝔾𝕖𝕟 - Smart Response** 🔮\n\n**Your question:** "${message}"\n\nI'm working in smart mode and ready to help! While I may not have real-time data, I can still provide intelligent answers on many topics.\n\n**I can help with:**\n• Programming and technology\n• Indian culture and knowledge\n• Educational topics\n• Problem-solving and analysis\n• General knowledge\n• Image analysis (with SERP API integration)\n\n🚀 **Try asking me about specific topics I can explain!** 🇮🇳`,
         role: "assistant",
         timestamp: new Date(),
         isError: false,
@@ -206,7 +223,7 @@ export default function AIWebChat() {
     }
     setIsSpeaking(false)
     setLastAiMessage("")
-    setCurrentProvider("Smart Assistant Ready 🧠")
+    setCurrentProvider("𝕏𝕪𝕝𝕠𝔾𝕖𝕟 Ready 🧠")
 
     setMessages([
       {
@@ -265,11 +282,29 @@ export default function AIWebChat() {
             <SharkLogo size={isMobile ? "sm" : "md"} animated={true} glowing={isSpeaking} />
             <div>
               <h1 className={`${isMobile ? "text-base" : "text-xl"} font-bold text-white flex items-center gap-2`}>
-                Shark 2.0 🇮🇳
                 <motion.span
-                  className={`${isMobile ? "text-xs px-1.5 py-0.5" : "text-xs px-2 py-1"} rounded-full font-mono bg-gradient-to-r from-green-500 to-blue-500 text-white`}
+                  className="bg-gradient-to-r from-purple-400 via-pink-400 to-cyan-400 bg-clip-text text-transparent font-extrabold tracking-wider"
                   animate={{
-                    boxShadow: ["0 0 5px #10b981", "0 0 15px #3b82f6", "0 0 5px #10b981"],
+                    backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"],
+                  }}
+                  transition={{
+                    duration: 3,
+                    repeat: Number.POSITIVE_INFINITY,
+                    ease: "linear",
+                  }}
+                  style={{
+                    backgroundSize: "200% 200%",
+                    textShadow: "0 0 20px rgba(168, 85, 247, 0.5)",
+                    filter: "drop-shadow(0 0 10px rgba(168, 85, 247, 0.3))",
+                  }}
+                >
+                  𝕏𝕪𝕝𝕠𝔾𝕖𝕟
+                </motion.span>
+                🇮🇳
+                <motion.span
+                  className={`${isMobile ? "text-xs px-1.5 py-0.5" : "text-xs px-2 py-1"} rounded-full font-mono bg-gradient-to-r from-purple-500 to-cyan-500 text-white`}
+                  animate={{
+                    boxShadow: ["0 0 5px #a855f7", "0 0 15px #06b6d4", "0 0 5px #a855f7"],
                   }}
                   transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY }}
                 >
@@ -278,7 +313,7 @@ export default function AIWebChat() {
               </h1>
               {!isMobile && (
                 <p className="text-xs text-white/80 font-mono">
-                  💫 Great power comes with great responsibility
+                  ✨ "Everything you can imagine is real."
                   {isLoading && " • 🔄 Processing..."}
                 </p>
               )}
@@ -338,7 +373,7 @@ export default function AIWebChat() {
         {isMobile && (
           <div className="px-2 py-0.5 bg-black/20 border-b border-white/10">
             <p className="text-xs text-white/80 font-mono text-center">
-              💫 Great power comes with great responsibility
+              ✨ "Everything you can imagine is real."
               {isLoading && " • 🔄 Processing..."}
             </p>
           </div>

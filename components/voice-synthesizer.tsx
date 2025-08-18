@@ -1,287 +1,261 @@
 "use client"
 
-import { useEffect, useRef, useCallback } from "react"
+import { useEffect, useState } from "react"
+import { motion } from "framer-motion"
 
 interface VoiceSynthesizerProps {
   text: string
-  isEnabled: boolean
-  onStart?: () => void
-  onEnd?: () => void
+  isActive: boolean
+  onSpeakingChange: (isSpeaking: boolean) => void
+  language?: string
 }
 
-export default function VoiceSynthesizer({ text, isEnabled, onStart, onEnd }: VoiceSynthesizerProps) {
-  const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null)
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null)
-  const isActiveRef = useRef(false)
-  const speechQueue = useRef<string[]>([])
-  const currentIndex = useRef(0)
+export default function VoiceSynthesizer({
+  text,
+  isActive,
+  onSpeakingChange,
+  language = "en-IN",
+}: VoiceSynthesizerProps) {
+  const [isSpeaking, setIsSpeaking] = useState(false)
+  const [currentUtterance, setCurrentUtterance] = useState<SpeechSynthesisUtterance | null>(null)
 
-  const cleanup = useCallback(() => {
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current)
-      timeoutRef.current = null
-    }
-    if (utteranceRef.current) {
-      utteranceRef.current = null
-    }
-    speechQueue.current = []
-    currentIndex.current = 0
-    isActiveRef.current = false
-  }, [])
+  // Enhanced Indian actress voice settings
+  const getOptimalVoice = () => {
+    if (typeof window === "undefined" || !window.speechSynthesis) return null
 
-  const handleEnd = useCallback(() => {
-    console.log("🔇 Enhanced speech completed successfully")
-    cleanup()
-    onEnd?.()
-  }, [cleanup, onEnd])
+    const voices = window.speechSynthesis.getVoices()
+    console.log(
+      "🎭 Available voices:",
+      voices.map((v) => `${v.name} (${v.lang})`),
+    )
 
-  const handleError = useCallback(
-    (event: SpeechSynthesisErrorEvent) => {
-      console.log("⚠️ Enhanced speech event:", event.error)
-      if (event.error === "interrupted" || event.error === "cancelled") {
-        cleanup()
-        onEnd?.()
-        return
+    // Priority order for Indian actress-like voices
+    const preferredVoices = [
+      // Indian female voices (most preferred)
+      "Raveena",
+      "Aditi",
+      "Priya",
+      "Veena",
+      "Kiran",
+      "Shreya",
+      "Kavya",
+      // Indian English voices
+      "en-IN",
+      "hi-IN",
+      // Generic female voices as fallback
+      "female",
+      "woman",
+      "girl",
+    ]
+
+    for (const preferred of preferredVoices) {
+      const voice = voices.find(
+        (v) =>
+          v.name.toLowerCase().includes(preferred.toLowerCase()) ||
+          v.lang.toLowerCase().includes(preferred.toLowerCase()) ||
+          (preferred === "female" && v.name.toLowerCase().includes("female")) ||
+          (preferred === "woman" && v.name.toLowerCase().includes("woman")),
+      )
+      if (voice) {
+        console.log("🎭 Selected actress voice:", voice.name, voice.lang)
+        return voice
       }
-      console.error("❌ Enhanced speech error:", event.error)
-      cleanup()
-      onEnd?.()
-    },
-    [cleanup, onEnd],
-  )
+    }
 
-  // Enhanced speech synthesis for technical content
-  const speakEnhancedChunks = useCallback(
-    (chunks: string[], index: number) => {
-      if (index >= chunks.length || !isActiveRef.current) {
-        handleEnd()
-        return
-      }
+    // Fallback to any available female voice
+    const femaleVoice = voices.find(
+      (v) =>
+        v.name.toLowerCase().includes("female") ||
+        v.name.toLowerCase().includes("woman") ||
+        v.name.toLowerCase().includes("girl"),
+    )
 
-      const chunk = chunks[index]
-      console.log(`🔊 Speaking enhanced chunk ${index + 1}/${chunks.length}:`, chunk.substring(0, 80) + "...")
+    if (femaleVoice) {
+      console.log("🎭 Using fallback female voice:", femaleVoice.name)
+      return femaleVoice
+    }
 
-      const utterance = new SpeechSynthesisUtterance(chunk)
-      utteranceRef.current = utterance
+    console.log("🎭 Using default voice")
+    return voices[0] || null
+  }
 
-      // Enhanced settings for technical content
-      utterance.rate = 0.75 // Slower for technical terms
-      utterance.pitch = 1.2 // Higher pitch for Indian girl voice
-      utterance.volume = 1.0
+  const cleanTextForSpeech = (text: string): string => {
+    return (
+      text
+        // Remove markdown formatting
+        .replace(/\*\*(.*?)\*\*/g, "$1")
+        .replace(/\*(.*?)\*/g, "$1")
+        .replace(/`(.*?)`/g, "$1")
+        .replace(/#{1,6}\s/g, "")
+        // Remove emojis but keep the text natural
+        .replace(
+          /[\u{1F600}-\u{1F64F}]|[\u{1F300}-\u{1F5FF}]|[\u{1F680}-\u{1F6FF}]|[\u{1F1E0}-\u{1F1FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/gu,
+          "",
+        )
+        // Keep Hindi/Hinglish terms natural
+        .replace(/XyloGen/g, "Xylo Gen")
+        .replace(/API/g, "A P I")
+        .replace(/AI/g, "A I")
+        // Clean up extra spaces
+        .replace(/\s+/g, " ")
+        .trim()
+    )
+  }
 
-      const setVoiceAndSpeak = () => {
-        const voices = window.speechSynthesis.getVoices()
+  const speakText = async (textToSpeak: string) => {
+    if (!textToSpeak.trim() || typeof window === "undefined" || !window.speechSynthesis) {
+      console.log("🎭 Cannot speak: no text or speech synthesis unavailable")
+      return
+    }
 
-        // Enhanced voice selection for technical content
-        const enhancedVoice =
-          voices.find(
-            (voice) =>
-              voice.lang === "en-IN" &&
-              (voice.name.toLowerCase().includes("female") ||
-                voice.name.includes("Raveena") ||
-                voice.name.includes("Aditi") ||
-                voice.name.includes("Priya")),
-          ) ||
-          voices.find((voice) => voice.lang === "en-IN") ||
-          voices.find((voice) => voice.lang === "hi-IN") ||
-          voices.find(
-            (voice) =>
-              voice.lang.startsWith("en") &&
-              (voice.name.toLowerCase().includes("female") ||
-                voice.name.includes("Samantha") ||
-                voice.name.includes("Victoria")),
-          ) ||
-          voices.find((voice) => voice.lang.startsWith("en"))
+    try {
+      // Stop any current speech
+      window.speechSynthesis.cancel()
 
-        if (enhancedVoice) {
-          utterance.voice = enhancedVoice
-          if (index === 0) {
-            console.log("🎤 Enhanced technical voice selected:", enhancedVoice.name)
-          }
+      // Wait a bit for cancellation to complete
+      await new Promise((resolve) => setTimeout(resolve, 100))
+
+      const cleanText = cleanTextForSpeech(textToSpeak)
+      console.log("🎭 Speaking with actress voice:", cleanText.slice(0, 100) + "...")
+
+      // Split into smaller chunks for better delivery
+      const chunks = cleanText.match(/.{1,280}(?:\s|$)/g) || [cleanText]
+
+      for (let i = 0; i < chunks.length; i++) {
+        const chunk = chunks[i].trim()
+        if (!chunk) continue
+
+        const utterance = new SpeechSynthesisUtterance(chunk)
+
+        // Enhanced Indian actress voice settings
+        const selectedVoice = getOptimalVoice()
+        if (selectedVoice) {
+          utterance.voice = selectedVoice
         }
 
+        // Actress-like voice characteristics
+        utterance.rate = 0.75 + Math.random() * 0.05 // 0.75-0.8 for elegant delivery
+        utterance.pitch = 1.4 + Math.random() * 0.1 // 1.4-1.5 for feminine pitch
+        utterance.volume = 0.9
+
+        // Set language based on content
+        if (language.includes("hi") || /[\u0900-\u097F]/.test(chunk)) {
+          utterance.lang = "hi-IN"
+        } else {
+          utterance.lang = "en-IN"
+        }
+
+        setCurrentUtterance(utterance)
+
+        // Enhanced event handlers
         utterance.onstart = () => {
-          if (index === 0) {
-            console.log("🔊 Enhanced technical speech started")
-            onStart?.()
-          }
-          console.log(`▶️ Started enhanced chunk ${index + 1}`)
+          console.log(`🎭 Started speaking chunk ${i + 1}/${chunks.length}`)
+          setIsSpeaking(true)
+          onSpeakingChange(true)
         }
 
         utterance.onend = () => {
-          console.log(`✅ Finished enhanced chunk ${index + 1}`)
-          utteranceRef.current = null
-          // Longer pause between chunks for technical content
-          setTimeout(() => {
-            speakEnhancedChunks(chunks, index + 1)
-          }, 600) // Increased pause for better comprehension
+          console.log(`🎭 Finished speaking chunk ${i + 1}/${chunks.length}`)
+          if (i === chunks.length - 1) {
+            setIsSpeaking(false)
+            onSpeakingChange(false)
+            setCurrentUtterance(null)
+          }
         }
 
         utterance.onerror = (event) => {
-          console.error(`❌ Enhanced chunk ${index + 1} error:`, event.error)
-          if (event.error !== "interrupted" && event.error !== "cancelled") {
-            // Continue with next chunk on error
-            setTimeout(() => {
-              speakEnhancedChunks(chunks, index + 1)
-            }, 800)
-          } else {
-            handleError(event)
-          }
+          console.error("🎭 Speech error:", event.error)
+          setIsSpeaking(false)
+          onSpeakingChange(false)
+          setCurrentUtterance(null)
         }
 
-        try {
-          window.speechSynthesis.speak(utterance)
-        } catch (error) {
-          console.error(`❌ Failed to speak enhanced chunk ${index + 1}:`, error)
-          setTimeout(() => {
-            speakEnhancedChunks(chunks, index + 1)
-          }, 800)
-        }
-      }
+        // Speak the chunk
+        window.speechSynthesis.speak(utterance)
 
-      const voices = window.speechSynthesis.getVoices()
-      if (voices.length > 0) {
-        setVoiceAndSpeak()
-      } else {
-        let voicesLoaded = false
-        window.speechSynthesis.onvoiceschanged = () => {
-          if (!voicesLoaded) {
-            voicesLoaded = true
-            setVoiceAndSpeak()
-          }
-        }
-        setTimeout(() => {
-          if (!voicesLoaded) {
-            voicesLoaded = true
-            setVoiceAndSpeak()
-          }
-        }, 1500)
-      }
-    },
-    [handleEnd, handleError, onStart],
-  )
-
-  useEffect(() => {
-    cleanup()
-
-    if (!text || !isEnabled || typeof window === "undefined" || !("speechSynthesis" in window)) {
-      return
-    }
-
-    // Enhanced text cleaning for technical content
-    const cleanText = text
-      .replace(/\*\*(.*?)\*\*/g, "$1") // Remove markdown bold
-      .replace(/\*(.*?)\*/g, "$1") // Remove markdown italic
-      .replace(/#{1,6}\s/g, "") // Remove markdown headers
-      .replace(/```[\s\S]*?```/g, "code block") // Replace code blocks
-      .replace(/`([^`]+)`/g, "$1") // Remove inline code backticks
-      .replace(/\[([^\]]+)\]$$[^)]+$$/g, "$1") // Remove markdown links
-      // Enhanced emoji removal
-      .replace(/🦈|🚀|🇮🇳|🧠|💬|📸|✅|❌|💥|🔊|🔇|🎯|🔄|💕|😊|❤️|💖|🥰|🤗|🌙|✨|🙏|🎤|💔|⏰|📝|🛑|•|⚡|🎭|📱|🌐|🎉/g, "")
-      // Technical term pronunciation improvements
-      .replace(/embedded/gi, "embedded")
-      .replace(/system/gi, "system")
-      .replace(/microcontroller/gi, "micro controller")
-      .replace(/IoT/gi, "I O T")
-      .replace(/CPU/gi, "C P U")
-      .replace(/RAM/gi, "R A M")
-      .replace(/ROM/gi, "R O M")
-      .replace(/API/gi, "A P I")
-      .replace(/USB/gi, "U S B")
-      .replace(/GPIO/gi, "G P I O")
-      .replace(/PWM/gi, "P W M")
-      .replace(/ADC/gi, "A D C")
-      .replace(/UART/gi, "U A R T")
-      .replace(/SPI/gi, "S P I")
-      .replace(/I2C/gi, "I two C")
-      .replace(/\n+/g, ". ") // Replace line breaks with periods
-      .replace(/\s+/g, " ") // Normalize whitespace
-      .replace(/\.\s*\./g, ".") // Remove double periods
-      .replace(/\s*,\s*/g, ", ") // Fix comma spacing
-      .replace(/\s*!\s*/g, "! ") // Fix exclamation spacing
-      .replace(/\s*\?\s*/g, "? ") // Fix question mark spacing
-      .trim()
-
-    if (!cleanText || cleanText.length < 3) {
-      console.log("🔇 Enhanced text too short or empty for speech")
-      return
-    }
-
-    // Enhanced chunking for technical content
-    const maxLength = 300 // Smaller chunks for better technical pronunciation
-    const sentences = cleanText.split(/[.!?]+/).filter((s) => s.trim().length > 0)
-    const chunks: string[] = []
-    let currentChunk = ""
-
-    for (const sentence of sentences) {
-      const trimmedSentence = sentence.trim()
-      if (currentChunk.length + trimmedSentence.length + 2 <= maxLength) {
-        currentChunk += (currentChunk ? ". " : "") + trimmedSentence
-      } else {
-        if (currentChunk) {
-          chunks.push(currentChunk + ".")
-        }
-        // If single sentence is too long, split by commas for technical content
-        if (trimmedSentence.length > maxLength) {
-          const subChunks = trimmedSentence.split(/,+/).filter((s) => s.trim().length > 0)
-          for (const subChunk of subChunks) {
-            if (subChunk.trim().length > 0) {
-              chunks.push(subChunk.trim() + ".")
+        // Wait for this chunk to finish before starting the next
+        if (i < chunks.length - 1) {
+          await new Promise((resolve) => {
+            utterance.onend = () => {
+              setTimeout(resolve, 500) // Pause between chunks for dramatic effect
             }
-          }
-          currentChunk = ""
-        } else {
-          currentChunk = trimmedSentence
+          })
         }
       }
+    } catch (error) {
+      console.error("🎭 Error in actress voice synthesis:", error)
+      setIsSpeaking(false)
+      onSpeakingChange(false)
     }
+  }
 
-    if (currentChunk) {
-      chunks.push(currentChunk + ".")
-    }
-
-    console.log("🔊 Preparing enhanced technical speech:", chunks.length, "chunks")
-    console.log("📝 First chunk preview:", chunks[0]?.substring(0, 100) + "...")
-
-    // Cancel any existing speech first
-    if (window.speechSynthesis.speaking) {
+  const stopSpeaking = () => {
+    if (typeof window !== "undefined" && window.speechSynthesis) {
       window.speechSynthesis.cancel()
+      setIsSpeaking(false)
+      onSpeakingChange(false)
+      setCurrentUtterance(null)
+      console.log("🎭 Stopped actress voice")
     }
-
-    isActiveRef.current = true
-    speechQueue.current = chunks
-    currentIndex.current = 0
-
-    // Enhanced delay for technical content initialization
-    timeoutRef.current = setTimeout(() => {
-      if (!isActiveRef.current) return
-
-      try {
-        speakEnhancedChunks(chunks, 0)
-      } catch (error) {
-        console.error("❌ Enhanced speech synthesis error:", error)
-        handleEnd()
-      }
-    }, 600) // Increased delay for better technical speech preparation
-
-    return cleanup
-  }, [text, isEnabled, cleanup, handleEnd, handleError, onStart, speakEnhancedChunks])
+  }
 
   useEffect(() => {
-    isActiveRef.current = isEnabled && !!text
-    return () => {
-      isActiveRef.current = false
+    if (isActive && text.trim()) {
+      speakText(text)
+    } else if (!isActive) {
+      stopSpeaking()
     }
-  }, [text, isEnabled])
 
+    return () => {
+      stopSpeaking()
+    }
+  }, [isActive, text])
+
+  // Load voices when component mounts
   useEffect(() => {
-    return () => {
-      if (typeof window !== "undefined" && "speechSynthesis" in window) {
-        window.speechSynthesis.cancel()
+    if (typeof window !== "undefined" && window.speechSynthesis) {
+      const loadVoices = () => {
+        const voices = window.speechSynthesis.getVoices()
+        if (voices.length > 0) {
+          console.log("🎭 Voices loaded for actress mode:", voices.length)
+        }
       }
-      cleanup()
-    }
-  }, [cleanup])
 
-  return null
+      loadVoices()
+      window.speechSynthesis.onvoiceschanged = loadVoices
+    }
+  }, [])
+
+  if (!isActive) return null
+
+  return (
+    <motion.div
+      className="fixed top-4 right-4 z-50 bg-gradient-to-r from-pink-500 to-purple-600 text-white px-4 py-2 rounded-full shadow-lg"
+      initial={{ opacity: 0, scale: 0.8 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.8 }}
+    >
+      <div className="flex items-center gap-2">
+        <motion.div
+          className="w-3 h-3 bg-white rounded-full"
+          animate={{
+            scale: isSpeaking ? [1, 1.2, 1] : 1,
+            opacity: isSpeaking ? [1, 0.7, 1] : 0.5,
+          }}
+          transition={{
+            duration: 0.8,
+            repeat: isSpeaking ? Number.POSITIVE_INFINITY : 0,
+          }}
+        />
+        <span className="text-sm font-medium">🎭 𝕏𝕪𝕝𝕠𝔾𝕖𝕟 Speaking</span>
+        <button
+          onClick={stopSpeaking}
+          className="ml-2 text-white hover:text-pink-200 transition-colors"
+          title="Stop Speaking"
+        >
+          ⏹️
+        </button>
+      </div>
+    </motion.div>
+  )
 }
