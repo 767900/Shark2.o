@@ -1,50 +1,64 @@
-import type { Message } from "@/types/chat"
-
 export interface ChatSession {
   id: string
   title: string
   messages: Message[]
   timestamp: Date
+  lastActivity: Date
+}
+
+export interface Message {
+  id: string
+  content: string
+  role: "user" | "assistant"
+  timestamp: Date
+  isVoice?: boolean
+  hasImage?: boolean
+  citations?: Array<{ title: string; url: string }>
+  related_questions?: string[]
+  isError?: boolean
 }
 
 export class ChatStorage {
-  private static readonly STORAGE_KEY = "shark2_chat_sessions"
+  private static readonly STORAGE_KEY = "shark-chat-sessions"
+  private static readonly CURRENT_SESSION_KEY = "shark-current-session"
   private static readonly MAX_SESSIONS = 50
 
-  static generateSessionId(): string {
-    return `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
-  }
-
-  static saveSession(messages: Message[]): void {
-    if (!messages || messages.length === 0) return
-
+  static saveSession(messages: Message[]): string {
     try {
+      if (!messages || messages.length === 0) return ""
+
       const sessions = this.getAllSessions()
-      const sessionId = this.generateSessionId()
+      const sessionId = Date.now().toString()
 
-      // Generate title from first user message
-      const firstUserMessage = messages.find((msg) => msg.role === "user")
-      const title =
-        firstUserMessage?.content.slice(0, 50) + (firstUserMessage?.content.length > 50 ? "..." : "") ||
-        "New Conversation"
+      // Create session title from first user message
+      const firstUserMessage = messages.find((m) => m.role === "user")
+      const title = firstUserMessage
+        ? firstUserMessage.content.slice(0, 50) + (firstUserMessage.content.length > 50 ? "..." : "")
+        : "New Chat"
 
-      const newSession: ChatSession = {
+      const session: ChatSession = {
         id: sessionId,
         title,
         messages,
         timestamp: new Date(),
+        lastActivity: new Date(),
       }
 
-      // Add new session at the beginning
-      sessions.unshift(newSession)
+      sessions.unshift(session)
 
       // Keep only the most recent sessions
-      const limitedSessions = sessions.slice(0, this.MAX_SESSIONS)
+      if (sessions.length > this.MAX_SESSIONS) {
+        sessions.splice(this.MAX_SESSIONS)
+      }
 
-      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(limitedSessions))
-      console.log("💾 Chat session saved:", sessionId)
+      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(sessions))
+      localStorage.setItem(this.CURRENT_SESSION_KEY, sessionId)
+
+      console.log("💾 Chat session saved:", sessionId, "with", messages.length, "messages")
+      return sessionId
     } catch (error) {
       console.error("❌ Failed to save chat session:", error)
+      return ""
     }
   }
 
@@ -53,13 +67,12 @@ export class ChatStorage {
       const stored = localStorage.getItem(this.STORAGE_KEY)
       if (!stored) return []
 
-      const sessions = JSON.parse(stored)
-
-      // Convert timestamp strings back to Date objects
-      return sessions.map((session: any) => ({
+      const sessions = JSON.parse(stored) as ChatSession[]
+      return sessions.map((session) => ({
         ...session,
         timestamp: new Date(session.timestamp),
-        messages: session.messages.map((msg: any) => ({
+        lastActivity: new Date(session.lastActivity),
+        messages: session.messages.map((msg) => ({
           ...msg,
           timestamp: new Date(msg.timestamp),
         })),
@@ -70,33 +83,106 @@ export class ChatStorage {
     }
   }
 
-  static deleteSession(sessionId: string): void {
-    try {
-      const sessions = this.getAllSessions()
-      const filteredSessions = sessions.filter((session) => session.id !== sessionId)
-      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(filteredSessions))
-      console.log("🗑️ Chat session deleted:", sessionId)
-    } catch (error) {
-      console.error("❌ Failed to delete chat session:", error)
-    }
-  }
-
-  static clearAllSessions(): void {
-    try {
-      localStorage.removeItem(this.STORAGE_KEY)
-      console.log("🧹 All chat sessions cleared")
-    } catch (error) {
-      console.error("❌ Failed to clear chat sessions:", error)
-    }
-  }
-
   static getSessionById(sessionId: string): ChatSession | null {
     try {
       const sessions = this.getAllSessions()
       return sessions.find((session) => session.id === sessionId) || null
     } catch (error) {
-      console.error("❌ Failed to get chat session:", error)
+      console.error("❌ Failed to get session by ID:", error)
       return null
     }
   }
+
+  static deleteSession(sessionId: string): boolean {
+    try {
+      const sessions = this.getAllSessions()
+      const filteredSessions = sessions.filter((session) => session.id !== sessionId)
+
+      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(filteredSessions))
+
+      // Clear current session if it was deleted
+      const currentSessionId = localStorage.getItem(this.CURRENT_SESSION_KEY)
+      if (currentSessionId === sessionId) {
+        localStorage.removeItem(this.CURRENT_SESSION_KEY)
+      }
+
+      console.log("🗑️ Chat session deleted:", sessionId)
+      return true
+    } catch (error) {
+      console.error("❌ Failed to delete chat session:", error)
+      return false
+    }
+  }
+
+  static clearAllSessions(): boolean {
+    try {
+      localStorage.removeItem(this.STORAGE_KEY)
+      localStorage.removeItem(this.CURRENT_SESSION_KEY)
+      console.log("🧹 All chat sessions cleared")
+      return true
+    } catch (error) {
+      console.error("❌ Failed to clear all sessions:", error)
+      return false
+    }
+  }
+
+  static getCurrentSessionId(): string | null {
+    try {
+      return localStorage.getItem(this.CURRENT_SESSION_KEY)
+    } catch (error) {
+      console.error("❌ Failed to get current session ID:", error)
+      return null
+    }
+  }
+
+  static loadCurrentSession(): Message[] {
+    try {
+      const currentSessionId = this.getCurrentSessionId()
+      if (!currentSessionId) return []
+
+      const session = this.getSessionById(currentSessionId)
+      return session ? session.messages : []
+    } catch (error) {
+      console.error("❌ Failed to load current session:", error)
+      return []
+    }
+  }
+}
+
+// Individual function exports for easier importing
+export const saveSession = (messages: Message[]): string => {
+  return ChatStorage.saveSession(messages)
+}
+
+export const getAllSessions = (): ChatSession[] => {
+  return ChatStorage.getAllSessions()
+}
+
+export const getSessionById = (sessionId: string): ChatSession | null => {
+  return ChatStorage.getSessionById(sessionId)
+}
+
+export const deleteSession = (sessionId: string): boolean => {
+  return ChatStorage.deleteSession(sessionId)
+}
+
+export const clearAllSessions = (): boolean => {
+  return ChatStorage.clearAllSessions()
+}
+
+export const getCurrentSessionId = (): string | null => {
+  return ChatStorage.getCurrentSessionId()
+}
+
+export const loadCurrentSession = (): Message[] => {
+  return ChatStorage.loadCurrentSession()
+}
+
+export const loadChatHistory = (): Message[] => {
+  return ChatStorage.loadCurrentSession()
+}
+
+export const loadSessionMessages = (sessionId: string): Message[] => {
+  const session = ChatStorage.getSessionById(sessionId)
+  return session ? session.messages : []
 }

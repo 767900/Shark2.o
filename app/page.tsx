@@ -11,7 +11,7 @@ import VoiceOnlyMode from "@/components/voice-only-mode"
 import DiscoverPage from "@/components/discover-page"
 import ImaginePage from "@/components/imagine-page"
 import ChatHistory from "@/components/chat-history"
-import { ChatStorage } from "@/lib/chat-storage"
+import { loadChatHistory, saveSession } from "@/lib/chat-storage"
 import type { Message } from "@/types/chat"
 
 const getRandomWelcomeMessage = () => {
@@ -63,6 +63,20 @@ export default function AIWebChat() {
     return () => window.removeEventListener("resize", checkMobile)
   }, [])
 
+  // Load chat history on component mount
+  useEffect(() => {
+    try {
+      const savedMessages = loadChatHistory()
+      if (savedMessages.length > 0) {
+        console.log("📚 Loaded", savedMessages.length, "messages from history")
+        setMessages(savedMessages)
+      }
+    } catch (error) {
+      console.error("❌ Failed to load chat history:", error)
+      // Keep the welcome message if loading fails
+    }
+  }, [])
+
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
   }
@@ -76,7 +90,7 @@ export default function AIWebChat() {
 
     const userMessage: Message = {
       id: Date.now().toString(),
-      content: message,
+      content: message || (image ? "Please analyze this image" : ""),
       role: "user",
       timestamp: new Date(),
       isVoice,
@@ -93,6 +107,9 @@ export default function AIWebChat() {
 
     try {
       console.log("🚀 CLIENT: Sending message to Shark 2.0:", message)
+      if (image) {
+        console.log("📸 CLIENT: Including image:", image.name, image.type, Math.round(image.size / 1024) + "KB")
+      }
 
       let response
 
@@ -100,7 +117,7 @@ export default function AIWebChat() {
         console.log("📸 CLIENT: Processing image with vision")
         const formData = new FormData()
         formData.append("image", image)
-        formData.append("message", message)
+        formData.append("message", message || "What do you see in this image?")
 
         response = await fetch("/api/vision", {
           method: "POST",
@@ -154,13 +171,18 @@ export default function AIWebChat() {
       setMessages(updatedMessages)
 
       // Save to chat history after successful conversation
-      ChatStorage.saveSession(updatedMessages)
+      try {
+        saveSession(updatedMessages)
+        console.log("💾 Chat session saved successfully")
+      } catch (saveError) {
+        console.error("❌ Failed to save chat session:", saveError)
+      }
     } catch (error) {
       console.error("💥 CLIENT: Error in handleSendMessage:", error)
 
       const errorMessage: Message = {
         id: Date.now().toString(),
-        content: `🦈 **Shark 2.0 - Smart Response** 🦈\n\n**Your question:** "${message}"\n\nI'm working in smart mode and ready to help! While I may not have real-time data, I can still provide intelligent answers on many topics.\n\n**I can help with:**\n• Programming and technology\n• Indian culture and knowledge\n• Educational topics\n• Problem-solving and analysis\n• General knowledge\n\n🚀 **Try asking me about specific topics I can explain!** 🇮🇳`,
+        content: `🦈 **Shark 2.0 - Smart Response** 🦈\n\n**Your question:** "${message}"\n\nI'm working in smart mode and ready to help! While I may not have real-time data, I can still provide intelligent answers on many topics.\n\n**I can help with:**\n• Programming and technology\n• Indian culture and knowledge\n• Educational topics\n• Problem-solving and analysis\n• General knowledge\n• Image analysis (with SERP API integration)\n\n🚀 **Try asking me about specific topics I can explain!** 🇮🇳`,
         role: "assistant",
         timestamp: new Date(),
         isError: false,
@@ -170,7 +192,11 @@ export default function AIWebChat() {
       setMessages(updatedMessages)
 
       // Save even error conversations to history
-      ChatStorage.saveSession(updatedMessages)
+      try {
+        saveSession(updatedMessages)
+      } catch (saveError) {
+        console.error("❌ Failed to save error conversation:", saveError)
+      }
     } finally {
       setIsLoading(false)
     }
@@ -202,6 +228,21 @@ export default function AIWebChat() {
   const handleLoadHistorySession = (sessionMessages: Message[]) => {
     setMessages(sessionMessages)
     setIsHistoryOpen(false)
+  }
+
+  const handleDiscoverClick = () => {
+    console.log("🟣 Discover button clicked - switching to discover mode")
+    setIsDiscoverMode(true)
+  }
+
+  const handleVoiceModeClick = () => {
+    console.log("🟠 Voice button clicked - switching to voice mode")
+    setIsVoiceMode(true)
+  }
+
+  const handleImageGenerationClick = () => {
+    console.log("🟣 Imagine button clicked - switching to imagine mode")
+    setIsImagineMode(true)
   }
 
   return (
@@ -337,9 +378,9 @@ export default function AIWebChat() {
               onSendMessage={handleSendMessage}
               isLoading={isLoading}
               voiceEnabled={false}
-              onDiscoverClick={() => setIsDiscoverMode(true)}
-              onVoiceModeClick={() => setIsVoiceMode(true)}
-              onImageGenerationClick={() => setIsImagineMode(true)}
+              onDiscoverClick={handleDiscoverClick}
+              onVoiceModeClick={handleVoiceModeClick}
+              onImageGenerationClick={handleImageGenerationClick}
             />
           </>
         )}
