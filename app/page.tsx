@@ -260,7 +260,7 @@ export default function AIWebChat() {
     <div
       className="min-h-screen relative overflow-hidden"
       style={{
-        backgroundImage: "url(/indian-flag.png)",
+        backgroundImage: "url(/tech-background.png)",
         backgroundSize: "cover",
         backgroundPosition: "center",
         backgroundRepeat: "no-repeat",
