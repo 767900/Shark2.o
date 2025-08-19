@@ -284,7 +284,7 @@ export default function AIWebChat() {
     )
   }
 
-  // Answer Mode - Full Screen Reading Experience (Book Format)
+  // Answer Mode - Full Screen Reading Experience
   if (isAnswerMode) {
     return (
       <motion.div
@@ -324,11 +324,11 @@ export default function AIWebChat() {
           </div>
         </div>
 
-        {/* Content - Full Width Book Format */}
-        <div className="w-full">
-          {/* Question - Full Width */}
+        {/* Content - Mobile: Full Width, Desktop: Centered */}
+        <div className={isMobile ? "w-full" : "max-w-4xl mx-auto"}>
+          {/* Question */}
           <motion.div
-            className="px-4 md:px-8 py-4 md:py-8 max-w-4xl md:mx-auto"
+            className="px-4 md:px-8 py-4 md:py-8"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
@@ -353,19 +353,15 @@ export default function AIWebChat() {
 
           {/* Loading State */}
           {isLoading && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="px-4 md:px-8 mb-6 md:mb-8 max-w-4xl md:mx-auto"
-            >
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="px-4 md:px-8 mb-6 md:mb-8">
               <TypingIndicator />
             </motion.div>
           )}
 
-          {/* Answer Content - Full Width Book Format */}
+          {/* Answer Content */}
           {currentAnswer && (
             <motion.div
-              className="px-4 md:px-8 max-w-4xl md:mx-auto prose prose-invert max-w-none"
+              className="px-4 md:px-8 prose prose-invert max-w-none"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4 }}
