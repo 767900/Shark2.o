@@ -50,7 +50,7 @@ const formatAIContent = (content: string): JSX.Element[] => {
     const trimmedLine = line.trim()
 
     if (!trimmedLine) {
-      formattedElements.push(<div key={`space-${index}`} className="h-6" />)
+      formattedElements.push(<div key={`space-${index}`} className="h-4 md:h-6" />)
       return
     }
 
@@ -58,7 +58,10 @@ const formatAIContent = (content: string): JSX.Element[] => {
     if (trimmedLine.endsWith(":") || (trimmedLine.startsWith("**") && trimmedLine.endsWith("**"))) {
       const headingText = trimmedLine.replace(/\*\*/g, "").replace(":", "")
       formattedElements.push(
-        <h2 key={`heading-${index}`} className="text-2xl font-bold text-white mb-6 mt-8 first:mt-0 leading-tight">
+        <h2
+          key={`heading-${index}`}
+          className="text-xl md:text-2xl font-bold text-white mb-4 md:mb-6 mt-6 md:mt-8 first:mt-0 leading-tight"
+        >
           {headingText}
         </h2>,
       )
@@ -68,7 +71,10 @@ const formatAIContent = (content: string): JSX.Element[] => {
     // Numbered headings
     if (/^\d+\.\s/.test(trimmedLine)) {
       formattedElements.push(
-        <h3 key={`numbered-${index}`} className="text-xl font-bold text-white mb-4 mt-6 leading-tight">
+        <h3
+          key={`numbered-${index}`}
+          className="text-lg md:text-xl font-bold text-white mb-3 md:mb-4 mt-4 md:mt-6 leading-tight"
+        >
           {trimmedLine}
         </h3>,
       )
@@ -84,9 +90,9 @@ const formatAIContent = (content: string): JSX.Element[] => {
         const term = parts[0].trim()
         const description = parts.slice(1).join(":").trim()
         formattedElements.push(
-          <div key={`bullet-${index}`} className="mb-6 flex items-start gap-4">
-            <span className="text-cyan-400 text-lg mt-2 flex-shrink-0">•</span>
-            <p className="text-lg leading-relaxed">
+          <div key={`bullet-${index}`} className="mb-4 md:mb-6 flex items-start gap-3 md:gap-4">
+            <span className="text-cyan-400 text-base md:text-lg mt-1 md:mt-2 flex-shrink-0">•</span>
+            <p className="text-base md:text-lg leading-relaxed">
               <span className="font-semibold text-white">{term}:</span>{" "}
               <span className="text-gray-200">{description}</span>
             </p>
@@ -94,9 +100,9 @@ const formatAIContent = (content: string): JSX.Element[] => {
         )
       } else {
         formattedElements.push(
-          <div key={`bullet-${index}`} className="mb-4 flex items-start gap-4">
-            <span className="text-cyan-400 text-lg mt-2 flex-shrink-0">•</span>
-            <p className="text-gray-200 text-lg leading-relaxed">{bulletText}</p>
+          <div key={`bullet-${index}`} className="mb-3 md:mb-4 flex items-start gap-3 md:gap-4">
+            <span className="text-cyan-400 text-base md:text-lg mt-1 md:mt-2 flex-shrink-0">•</span>
+            <p className="text-gray-200 text-base md:text-lg leading-relaxed">{bulletText}</p>
           </div>,
         )
       }
@@ -105,7 +111,7 @@ const formatAIContent = (content: string): JSX.Element[] => {
 
     // Regular paragraphs
     formattedElements.push(
-      <p key={`para-${index}`} className="text-gray-200 text-lg leading-relaxed mb-6">
+      <p key={`para-${index}`} className="text-gray-200 text-base md:text-lg leading-relaxed mb-4 md:mb-6">
         {trimmedLine}
       </p>,
     )
@@ -289,7 +295,7 @@ export default function AIWebChat() {
       >
         {/* Header */}
         <div className="sticky top-0 bg-black/90 backdrop-blur-sm border-b border-gray-800 z-10">
-          <div className="flex items-center justify-between p-4">
+          <div className="flex items-center justify-between p-3 md:p-4">
             <motion.button
               onClick={handleBackToHome}
               className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors"
@@ -299,7 +305,7 @@ export default function AIWebChat() {
               <ArrowLeft className="w-5 h-5" />
             </motion.button>
 
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3 md:gap-4">
               <motion.button
                 className="text-gray-400 hover:text-white transition-colors"
                 whileHover={{ scale: 1.05 }}
@@ -319,10 +325,10 @@ export default function AIWebChat() {
         </div>
 
         {/* Content */}
-        <div className="max-w-4xl mx-auto px-4 py-8">
+        <div className="max-w-4xl mx-auto px-3 md:px-4 py-4 md:py-8">
           {/* Question */}
           <motion.h1
-            className="text-2xl md:text-3xl font-normal text-white mb-8 leading-relaxed"
+            className="text-xl md:text-2xl lg:text-3xl font-normal text-white mb-6 md:mb-8 leading-relaxed"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
@@ -332,25 +338,25 @@ export default function AIWebChat() {
 
           {/* Filter Buttons */}
           <motion.div
-            className="flex gap-3 mb-8"
+            className="flex gap-2 md:gap-3 mb-6 md:mb-8 overflow-x-auto pb-2"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
           >
-            <div className="px-4 py-2 bg-white/10 rounded-full text-sm text-white border border-white/20">
+            <div className="px-3 md:px-4 py-2 bg-white/10 rounded-full text-xs md:text-sm text-white border border-white/20 whitespace-nowrap">
               🦈 𝕏𝕪𝕝𝕠𝔾𝕖𝕟 Pro
             </div>
-            <div className="px-4 py-2 bg-white/5 rounded-full text-sm text-gray-400 border border-white/10">
+            <div className="px-3 md:px-4 py-2 bg-white/5 rounded-full text-xs md:text-sm text-gray-400 border border-white/10 whitespace-nowrap">
               📚 Sources
             </div>
-            <div className="px-4 py-2 bg-white/5 rounded-full text-sm text-gray-400 border border-white/10">
+            <div className="px-3 md:px-4 py-2 bg-white/5 rounded-full text-xs md:text-sm text-gray-400 border border-white/10 whitespace-nowrap">
               🇮🇳 Indian Context
             </div>
           </motion.div>
 
           {/* Loading State */}
           {isLoading && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-8">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-6 md:mb-8">
               <TypingIndicator />
             </motion.div>
           )}
@@ -371,13 +377,13 @@ export default function AIWebChat() {
         </div>
 
         {/* Bottom Input */}
-        <div className="sticky bottom-0 bg-black/90 backdrop-blur-sm border-t border-gray-800 p-4">
+        <div className="sticky bottom-0 bg-black/90 backdrop-blur-sm border-t border-gray-800 p-3 md:p-4">
           <div className="max-w-4xl mx-auto">
             <div className="relative">
               <input
                 type="text"
                 placeholder="Ask follow-up..."
-                className="w-full bg-gray-900 border border-gray-700 rounded-full px-6 py-4 text-white placeholder-gray-400 focus:outline-none focus:border-cyan-500 transition-colors"
+                className="w-full bg-gray-900 border border-gray-700 rounded-full px-4 md:px-6 py-3 md:py-4 text-white placeholder-gray-400 focus:outline-none focus:border-cyan-500 transition-colors text-sm md:text-base"
                 value={inputText}
                 onChange={(e) => setInputText(e.target.value)}
                 onKeyPress={(e) => {
@@ -387,7 +393,7 @@ export default function AIWebChat() {
                 }}
               />
               <motion.button
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
+                className="absolute right-2 md:right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition-colors p-1"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
@@ -409,7 +415,7 @@ export default function AIWebChat() {
         backgroundSize: "cover",
         backgroundPosition: "center",
         backgroundRepeat: "no-repeat",
-        backgroundAttachment: "fixed",
+        backgroundAttachment: isMobile ? "scroll" : "fixed",
       }}
     >
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
@@ -417,16 +423,16 @@ export default function AIWebChat() {
       <div className="relative z-10 min-h-screen flex flex-col">
         {/* Header */}
         <motion.header
-          className="flex items-center justify-between p-4 md:p-6"
+          className="flex items-center justify-between p-3 md:p-4 lg:p-6"
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          <div className="flex items-center gap-3">
-            <SharkLogo size="md" animated={true} />
+          <div className="flex items-center gap-2 md:gap-3">
+            <SharkLogo size={isMobile ? "sm" : "md"} animated={true} />
             <div>
               <motion.h1
-                className="text-xl md:text-2xl font-bold text-white flex items-center gap-2"
+                className="text-lg md:text-xl lg:text-2xl font-bold text-white flex items-center gap-1 md:gap-2"
                 animate={{
                   backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"],
                 }}
@@ -453,25 +459,25 @@ export default function AIWebChat() {
 
           <motion.button
             onClick={() => setIsHistoryOpen(true)}
-            className="text-white/60 hover:text-white transition-colors"
+            className="text-white/60 hover:text-white transition-colors p-1"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             title="Chat History"
           >
-            <Clock className="w-6 h-6" />
+            <Clock className="w-5 h-5 md:w-6 md:h-6" />
           </motion.button>
         </motion.header>
 
         {/* Main Content */}
-        <div className="flex-1 flex flex-col items-center justify-center px-4 pb-32">
+        <div className="flex-1 flex flex-col items-center justify-center px-3 md:px-4 pb-24 md:pb-32">
           <motion.div
-            className="text-center mb-16"
+            className="text-center mb-12 md:mb-16"
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.2 }}
           >
             <motion.div
-              className="w-20 h-20 mx-auto mb-8 text-6xl"
+              className="w-16 h-16 md:w-20 md:h-20 mx-auto mb-6 md:mb-8 text-4xl md:text-6xl"
               animate={{
                 scale: [1, 1.1, 1],
                 rotate: [0, 5, -5, 0],
@@ -485,7 +491,7 @@ export default function AIWebChat() {
               🦈
             </motion.div>
 
-            <h2 className="text-4xl md:text-6xl font-light text-white mb-6 leading-tight">
+            <h2 className="text-3xl md:text-4xl lg:text-6xl font-light text-white mb-4 md:mb-6 leading-tight px-2">
               Everything
               <br />
               <span className="bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
@@ -501,7 +507,7 @@ export default function AIWebChat() {
 
         {/* Bottom Input */}
         <motion.div
-          className="sticky bottom-0 p-4 md:p-6"
+          className="sticky bottom-0 p-3 md:p-4 lg:p-6"
           initial={{ opacity: 0, y: 50 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.4 }}

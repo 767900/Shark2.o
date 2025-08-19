@@ -8,7 +8,7 @@ import SharkLogo from "@/components/shark-logo"
 import Citations from "@/components/citations"
 import RelatedQuestions from "@/components/related-questions"
 import type { Message } from "@/types/chat"
-import type { JSX } from "react/jsx-runtime" // Import JSX to fix the undeclared variable error
+import type { JSX } from "react/jsx-runtime"
 
 interface MessageBubbleProps {
   message: Message
@@ -42,7 +42,7 @@ export default function MessageBubble({ message, onRelatedQuestionClick }: Messa
       const trimmedLine = line.trim()
 
       if (!trimmedLine) {
-        formattedLines.push(<div key={index} className="h-4" />)
+        formattedLines.push(<div key={index} className="h-3 md:h-4" />)
         return
       }
 
@@ -50,7 +50,10 @@ export default function MessageBubble({ message, onRelatedQuestionClick }: Messa
       if (trimmedLine.endsWith(":") || (trimmedLine.startsWith("**") && trimmedLine.endsWith("**"))) {
         const headingText = trimmedLine.replace(/\*\*/g, "").replace(/:$/, "")
         formattedLines.push(
-          <h3 key={index} className="text-xl md:text-2xl font-bold text-white mb-4 mt-6 first:mt-0">
+          <h3
+            key={index}
+            className="text-lg md:text-xl lg:text-2xl font-bold text-white mb-3 md:mb-4 mt-4 md:mt-6 first:mt-0"
+          >
             {headingText}
           </h3>,
         )
@@ -68,19 +71,19 @@ export default function MessageBubble({ message, onRelatedQuestionClick }: Messa
           const description = bulletContent.substring(colonIndex + 1).trim()
 
           formattedLines.push(
-            <div key={index} className="flex items-start gap-3 mb-3">
-              <span className="text-cyan-300 mt-1 text-lg">•</span>
+            <div key={index} className="flex items-start gap-2 md:gap-3 mb-2 md:mb-3">
+              <span className="text-cyan-300 mt-1 text-sm md:text-lg">•</span>
               <div className="flex-1">
-                <span className="font-bold text-white">{term}:</span>
-                <span className="text-gray-100 ml-1">{description}</span>
+                <span className="font-bold text-white text-sm md:text-base">{term}:</span>
+                <span className="text-gray-100 ml-1 text-sm md:text-base">{description}</span>
               </div>
             </div>,
           )
         } else {
           formattedLines.push(
-            <div key={index} className="flex items-start gap-3 mb-3">
-              <span className="text-cyan-300 mt-1 text-lg">•</span>
-              <span className="text-gray-100 flex-1">{bulletContent}</span>
+            <div key={index} className="flex items-start gap-2 md:gap-3 mb-2 md:mb-3">
+              <span className="text-cyan-300 mt-1 text-sm md:text-lg">•</span>
+              <span className="text-gray-100 flex-1 text-sm md:text-base">{bulletContent}</span>
             </div>,
           )
         }
@@ -89,7 +92,7 @@ export default function MessageBubble({ message, onRelatedQuestionClick }: Messa
 
       // Regular paragraph
       formattedLines.push(
-        <p key={index} className="text-lg md:text-xl text-gray-100 mb-4 leading-relaxed">
+        <p key={index} className="text-sm md:text-lg lg:text-xl text-gray-100 mb-3 md:mb-4 leading-relaxed">
           {trimmedLine}
         </p>,
       )
@@ -101,13 +104,13 @@ export default function MessageBubble({ message, onRelatedQuestionClick }: Messa
   if (message.role === "user") {
     return (
       <motion.div
-        className="flex justify-end mb-4 px-4"
+        className="flex justify-end mb-3 md:mb-4 px-3 md:px-4"
         initial={{ opacity: 0, x: 20 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.3 }}
       >
-        <div className="max-w-[80%] bg-cyan-500/30 backdrop-blur-sm border border-cyan-400/50 rounded-2xl px-4 py-3">
-          <p className="text-white font-medium">{message.content}</p>
+        <div className="max-w-[85%] md:max-w-[80%] bg-cyan-500/30 backdrop-blur-sm border border-cyan-400/50 rounded-2xl px-3 md:px-4 py-2 md:py-3">
+          <p className="text-white font-medium text-sm md:text-base">{message.content}</p>
           {message.hasImage && (
             <div className="mt-2 text-xs text-cyan-100 flex items-center gap-1">📸 Image attached</div>
           )}
@@ -121,18 +124,18 @@ export default function MessageBubble({ message, onRelatedQuestionClick }: Messa
 
   return (
     <motion.div
-      className="mb-6"
+      className="mb-4 md:mb-6"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
     >
       {/* AI Response - Full Screen Format */}
-      <div className="px-4 md:px-6">
+      <div className="px-3 md:px-4 lg:px-6">
         {/* Header - Minimal on mobile, container on desktop */}
-        <div className="flex items-center gap-3 mb-4 md:bg-black/30 md:backdrop-blur-sm md:border md:border-white/10 md:rounded-xl md:p-4">
-          <SharkLogo size="md" animated={true} />
+        <div className="flex items-center gap-2 md:gap-3 mb-3 md:mb-4 md:bg-black/30 md:backdrop-blur-sm md:border md:border-white/10 md:rounded-xl md:p-4">
+          <SharkLogo size="sm" animated={true} />
           <div>
-            <h4 className="font-bold text-white">𝕏𝕪𝕝𝕠𝔾𝕖𝕟</h4>
+            <h4 className="font-bold text-white text-sm md:text-base">𝕏𝕪𝕝𝕠𝔾𝕖𝕟</h4>
             <p className="text-xs text-gray-300">AI Assistant</p>
           </div>
           <div className="ml-auto text-xs text-gray-400">
@@ -146,14 +149,14 @@ export default function MessageBubble({ message, onRelatedQuestionClick }: Messa
 
           {/* Citations */}
           {message.citations && message.citations.length > 0 && (
-            <div className="mt-6 md:bg-white/5 md:rounded-lg md:p-4">
+            <div className="mt-4 md:mt-6 md:bg-white/5 md:rounded-lg md:p-4">
               <Citations citations={message.citations} />
             </div>
           )}
 
           {/* Related Questions */}
           {message.related_questions && message.related_questions.length > 0 && (
-            <div className="mt-6 md:bg-white/5 md:rounded-lg md:p-4">
+            <div className="mt-4 md:mt-6 md:bg-white/5 md:rounded-lg md:p-4">
               <RelatedQuestions questions={message.related_questions} onQuestionClick={onRelatedQuestionClick} />
             </div>
           )}
