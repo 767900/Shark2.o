@@ -284,7 +284,7 @@ export default function AIWebChat() {
     )
   }
 
-  // Answer Mode - Full Screen Reading Experience
+  // Answer Mode - Full Screen Reading Experience (Book Format)
   if (isAnswerMode) {
     return (
       <motion.div
@@ -324,47 +324,48 @@ export default function AIWebChat() {
           </div>
         </div>
 
-        {/* Content */}
-        <div className="max-w-4xl mx-auto px-3 md:px-4 py-4 md:py-8">
-          {/* Question */}
-          <motion.h1
-            className="text-xl md:text-2xl lg:text-3xl font-normal text-white mb-6 md:mb-8 leading-relaxed"
+        {/* Content - Full Width Book Format */}
+        <div className="w-full">
+          {/* Question - Full Width */}
+          <motion.div
+            className="px-4 md:px-8 py-4 md:py-8 max-w-4xl md:mx-auto"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
           >
-            {currentQuestion}
-          </motion.h1>
+            <h1 className="text-xl md:text-2xl lg:text-3xl font-normal text-white mb-6 md:mb-8 leading-relaxed">
+              {currentQuestion}
+            </h1>
 
-          {/* Filter Buttons */}
-          <motion.div
-            className="flex gap-2 md:gap-3 mb-6 md:mb-8 overflow-x-auto pb-2"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-          >
-            <div className="px-3 md:px-4 py-2 bg-white/10 rounded-full text-xs md:text-sm text-white border border-white/20 whitespace-nowrap">
-              🦈 𝕏𝕪𝕝𝕠𝔾𝕖𝕟 Pro
-            </div>
-            <div className="px-3 md:px-4 py-2 bg-white/5 rounded-full text-xs md:text-sm text-gray-400 border border-white/10 whitespace-nowrap">
-              📚 Sources
-            </div>
-            <div className="px-3 md:px-4 py-2 bg-white/5 rounded-full text-xs md:text-sm text-gray-400 border border-white/10 whitespace-nowrap">
-              🇮🇳 Indian Context
+            {/* Filter Buttons */}
+            <div className="flex gap-2 md:gap-3 mb-6 md:mb-8 overflow-x-auto pb-2">
+              <div className="px-3 md:px-4 py-2 bg-white/10 rounded-full text-xs md:text-sm text-white border border-white/20 whitespace-nowrap">
+                🦈 𝕏𝕪𝕝𝕠𝔾𝕖𝕟 Pro
+              </div>
+              <div className="px-3 md:px-4 py-2 bg-white/5 rounded-full text-xs md:text-sm text-gray-400 border border-white/10 whitespace-nowrap">
+                📚 Sources
+              </div>
+              <div className="px-3 md:px-4 py-2 bg-white/5 rounded-full text-xs md:text-sm text-gray-400 border border-white/10 whitespace-nowrap">
+                🇮🇳 Indian Context
+              </div>
             </div>
           </motion.div>
 
           {/* Loading State */}
           {isLoading && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-6 md:mb-8">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="px-4 md:px-8 mb-6 md:mb-8 max-w-4xl md:mx-auto"
+            >
               <TypingIndicator />
             </motion.div>
           )}
 
-          {/* Answer Content */}
+          {/* Answer Content - Full Width Book Format */}
           {currentAnswer && (
             <motion.div
-              className="prose prose-invert max-w-none"
+              className="px-4 md:px-8 max-w-4xl md:mx-auto prose prose-invert max-w-none"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4 }}
