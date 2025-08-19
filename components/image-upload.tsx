@@ -99,6 +99,7 @@ export default function ImageUpload({ onImageSelect, onImageRemove, selectedImag
 
   const handleClick = () => {
     if (disabled || isLoading) return
+    setError(null)
     fileInputRef.current?.click()
   }
 

@@ -2,17 +2,17 @@
 
 import { useState, useRef, useEffect } from "react"
 import { motion } from "framer-motion"
-import { Trash2, Clock } from "lucide-react"
-import ChatWindow from "@/components/chat-window"
+import { ArrowLeft, Bookmark, Share2, Clock } from "lucide-react"
 import InputBar from "@/components/input-bar"
 import SharkLogo from "@/components/shark-logo"
-import SharkLoading from "@/components/shark-loading"
 import VoiceOnlyMode from "@/components/voice-only-mode"
 import DiscoverPage from "@/components/discover-page"
 import ImaginePage from "@/components/imagine-page"
 import ChatHistory from "@/components/chat-history"
+import TypingIndicator from "@/components/typing-indicator"
 import { saveSession } from "@/lib/chat-storage"
 import type { Message } from "@/types/chat"
+import type { JSX } from "react"
 
 const getRandomWelcomeMessage = () => {
   const welcomeMessages = [
@@ -33,11 +33,7 @@ const getRandomWelcomeMessage = () => {
     "Greetings, explorer! I'm 𝕏𝕪𝕝𝕠𝔾𝕖𝕟, ready to venture into the unknown with you.",
     "Hi! 𝕏𝕪𝕝𝕠𝔾𝕖𝕟 speaking - your AI friend who's always excited to chat and help!",
     "Welcome! I'm 𝕏𝕪𝕝𝕠𝔾𝕖𝕟, designed to make every conversation meaningful. Let's begin!",
-    "Hello! 𝕏𝕪𝕝𝕠𝔾𝕖𝕟 here, your intelligent assistant ready for any adventure in knowledge.",
-    "𝕏𝕪𝕝𝕠𝔾𝕖𝕟 at your service! Ready to transform curiosity into understanding. What's your question?",
-    "Hey there! I'm 𝕏𝕪𝕝𝕠𝔾𝕖𝕟, your AI companion who loves exploring ideas with you.",
-    "Namaste! 𝕏𝕪𝕝𝕠𝔾𝕖𝕟 here, blending technology with wisdom. How can I serve you today?",
-    "Hello! I'm 𝕏𝕪𝕝𝕠𝔾𝕖𝕟, your digital guide through the vast landscape of knowledge.",
+    "Hello! I'm 𝕏𝕪𝕝𝕠𝔾𝕖𝕟, your intelligent assistant ready for any adventure in knowledge.",
     "𝕏𝕪𝕝𝕠𝔾𝕖𝕟 online and ready! Let's turn your questions into fascinating discoveries.",
     "Greetings! I'm 𝕏𝕪𝕝𝕠𝔾𝕖𝕟, your AI partner in learning and exploration. What intrigues you?",
     "Hi! 𝕏𝕪𝕝𝕠𝔾𝕖𝕟 here - think of me as your personal research assistant and friend combined!",
@@ -45,21 +41,86 @@ const getRandomWelcomeMessage = () => {
   return welcomeMessages[Math.floor(Math.random() * welcomeMessages.length)]
 }
 
+// Format AI content for full-screen reading
+const formatAIContent = (content: string): JSX.Element[] => {
+  const lines = content.split("\n")
+  const formattedElements: JSX.Element[] = []
+
+  lines.forEach((line, index) => {
+    const trimmedLine = line.trim()
+
+    if (!trimmedLine) {
+      formattedElements.push(<div key={`space-${index}`} className="h-6" />)
+      return
+    }
+
+    // Main headings
+    if (trimmedLine.endsWith(":") || (trimmedLine.startsWith("**") && trimmedLine.endsWith("**"))) {
+      const headingText = trimmedLine.replace(/\*\*/g, "").replace(":", "")
+      formattedElements.push(
+        <h2 key={`heading-${index}`} className="text-2xl font-bold text-white mb-6 mt-8 first:mt-0 leading-tight">
+          {headingText}
+        </h2>,
+      )
+      return
+    }
+
+    // Numbered headings
+    if (/^\d+\.\s/.test(trimmedLine)) {
+      formattedElements.push(
+        <h3 key={`numbered-${index}`} className="text-xl font-bold text-white mb-4 mt-6 leading-tight">
+          {trimmedLine}
+        </h3>,
+      )
+      return
+    }
+
+    // Bullet points
+    if (trimmedLine.startsWith("• ") || trimmedLine.startsWith("- ")) {
+      const bulletText = trimmedLine.substring(2)
+      const parts = bulletText.split(":")
+
+      if (parts.length > 1) {
+        const term = parts[0].trim()
+        const description = parts.slice(1).join(":").trim()
+        formattedElements.push(
+          <div key={`bullet-${index}`} className="mb-6 flex items-start gap-4">
+            <span className="text-cyan-400 text-lg mt-2 flex-shrink-0">•</span>
+            <p className="text-lg leading-relaxed">
+              <span className="font-semibold text-white">{term}:</span>{" "}
+              <span className="text-gray-200">{description}</span>
+            </p>
+          </div>,
+        )
+      } else {
+        formattedElements.push(
+          <div key={`bullet-${index}`} className="mb-4 flex items-start gap-4">
+            <span className="text-cyan-400 text-lg mt-2 flex-shrink-0">•</span>
+            <p className="text-gray-200 text-lg leading-relaxed">{bulletText}</p>
+          </div>,
+        )
+      }
+      return
+    }
+
+    // Regular paragraphs
+    formattedElements.push(
+      <p key={`para-${index}`} className="text-gray-200 text-lg leading-relaxed mb-6">
+        {trimmedLine}
+      </p>,
+    )
+  })
+
+  return formattedElements
+}
+
 export default function AIWebChat() {
-  // Always start with a fresh welcome message
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: "welcome-" + Date.now(),
-      content: getRandomWelcomeMessage(),
-      role: "assistant",
-      timestamp: new Date(),
-    },
-  ])
+  const [messages, setMessages] = useState<Message[]>([])
   const [inputText, setInputText] = useState("")
   const [isLoading, setIsLoading] = useState(false)
-  const [lastAiMessage, setLastAiMessage] = useState<string>("")
-  const [isSpeaking, setIsSpeaking] = useState(false)
-  const [currentProvider, setCurrentProvider] = useState<string>("𝕏𝕪𝕝𝕠𝔾𝕖𝕟 Ready 🧠")
+  const [currentQuestion, setCurrentQuestion] = useState("")
+  const [currentAnswer, setCurrentAnswer] = useState("")
+  const [isAnswerMode, setIsAnswerMode] = useState(false)
   const [isVoiceMode, setIsVoiceMode] = useState(false)
   const [isDiscoverMode, setIsDiscoverMode] = useState(false)
   const [isImagineMode, setIsImagineMode] = useState(false)
@@ -81,22 +142,23 @@ export default function AIWebChat() {
     return () => window.removeEventListener("resize", checkMobile)
   }, [])
 
-  // Always start fresh - no loading of previous chat history
-  useEffect(() => {
-    console.log("🚀 Starting fresh 𝕏𝕪𝕝𝕠𝔾𝕖𝕟 session")
-    // We intentionally don't load chat history here to always start fresh
-  }, [])
-
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
   }
 
   useEffect(() => {
     scrollToBottom()
-  }, [messages])
+  }, [currentAnswer])
 
   const handleSendMessage = async (message: string, isVoice = false, image?: File) => {
     if ((!message.trim() && !image) || isLoading) return
+
+    // Switch to answer mode with smooth transition
+    setCurrentQuestion(message)
+    setCurrentAnswer("")
+    setIsAnswerMode(true)
+    setIsLoading(true)
+    setInputText("")
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -107,24 +169,12 @@ export default function AIWebChat() {
       hasImage: !!image,
     }
 
-    setMessages((prev) => [...prev, userMessage])
-    setInputText("")
-    setIsLoading(true)
-
-    // Clear any previous speech when sending new message
-    setLastAiMessage("")
-    setIsSpeaking(false)
-
     try {
       console.log("🚀 CLIENT: Sending message to 𝕏𝕪𝕝𝕠𝔾𝕖𝕟:", message)
-      if (image) {
-        console.log("📸 CLIENT: Including image:", image.name, image.type, Math.round(image.size / 1024) + "KB")
-      }
 
       let response
 
       if (image) {
-        console.log("📸 CLIENT: Processing image with vision")
         const formData = new FormData()
         formData.append("image", image)
         formData.append("message", message || "What do you see in this image?")
@@ -134,12 +184,12 @@ export default function AIWebChat() {
           body: formData,
         })
       } else {
-        console.log("💬 CLIENT: Processing text message")
         const requestBody = {
-          messages: [...messages, userMessage].map((msg) => ({
+          messages: [userMessage].map((msg) => ({
             role: msg.role,
             content: msg.content,
           })),
+          message: message,
         }
 
         response = await fetch("/api/chat", {
@@ -151,22 +201,14 @@ export default function AIWebChat() {
         })
       }
 
-      console.log("📡 CLIENT: Response status:", response.status)
-
       if (!response.ok) {
-        const errorText = await response.text()
-        console.error("❌ CLIENT: API Error Response:", errorText)
-        throw new Error(`API Error ${response.status}: ${errorText}`)
+        throw new Error(`API Error ${response.status}`)
       }
 
       const data = await response.json()
-      console.log("✅ CLIENT: Response received from:", data.provider)
+      setCurrentAnswer(data.content || "No response received")
 
-      // Update current provider
-      if (data.provider) {
-        setCurrentProvider(data.provider)
-      }
-
+      // Save to history
       const aiMessage: Message = {
         id: (Date.now() + 1).toString(),
         content: data.content || "No response received",
@@ -177,85 +219,188 @@ export default function AIWebChat() {
         isError: false,
       }
 
-      const updatedMessages = [...messages, userMessage, aiMessage]
-      setMessages(updatedMessages)
+      const sessionMessages = [userMessage, aiMessage]
+      setMessages(sessionMessages)
 
-      // Save to chat history after successful conversation
-      try {
-        saveSession(updatedMessages)
-        console.log("💾 Chat session saved successfully")
-      } catch (saveError) {
-        console.error("❌ Failed to save chat session:", saveError)
-      }
+      // Save session to chat history
+      saveSession(sessionMessages)
+      console.log("💾 Chat session saved with", sessionMessages.length, "messages")
     } catch (error) {
-      console.error("💥 CLIENT: Error in handleSendMessage:", error)
-
-      const errorMessage: Message = {
-        id: Date.now().toString(),
-        content: `🔮 **𝕏𝕪𝕝𝕠𝔾𝕖𝕟 - Smart Response** 🔮\n\n**Your question:** "${message}"\n\nI'm working in smart mode and ready to help! While I may not have real-time data, I can still provide intelligent answers on many topics.\n\n**I can help with:**\n• Programming and technology\n• Indian culture and knowledge\n• Educational topics\n• Problem-solving and analysis\n• General knowledge\n• Image analysis (with SERP API integration)\n\n🚀 **Try asking me about specific topics I can explain!** 🇮🇳`,
-        role: "assistant",
-        timestamp: new Date(),
-        isError: false,
-      }
-
-      const updatedMessages = [...messages, userMessage, errorMessage]
-      setMessages(updatedMessages)
-
-      // Save even error conversations to history
-      try {
-        saveSession(updatedMessages)
-      } catch (saveError) {
-        console.error("❌ Failed to save error conversation:", saveError)
-      }
+      console.error("💥 CLIENT: Error:", error)
+      setCurrentAnswer(
+        `I'm working in smart mode and ready to help! While I may not have real-time data, I can still provide intelligent answers on many topics.\n\n**I can help with:**\n• Programming and technology\n• Indian culture and knowledge\n• Educational topics\n• Problem-solving and analysis\n• General knowledge\n• Image analysis\n\n🚀 **Try asking me about specific topics I can explain!** 🇮🇳`,
+      )
     } finally {
       setIsLoading(false)
     }
   }
 
-  const handleRelatedQuestionClick = (question: string) => {
-    handleSendMessage(question)
+  const handleBackToHome = () => {
+    setIsAnswerMode(false)
+    setCurrentQuestion("")
+    setCurrentAnswer("")
+    setMessages([])
   }
 
-  const clearChat = () => {
-    // Stop any speech synthesis if running
-    if (typeof window !== "undefined" && "speechSynthesis" in window) {
-      window.speechSynthesis.cancel()
-    }
-    setIsSpeaking(false)
-    setLastAiMessage("")
-    setCurrentProvider("𝕏𝕪𝕝𝕠𝔾𝕖𝕟 Ready 🧠")
+  const handleDiscoverClick = () => setIsDiscoverMode(true)
+  const handleVoiceModeClick = () => setIsVoiceMode(true)
+  const handleImageGenerationClick = () => setIsImagineMode(true)
 
-    setMessages([
-      {
-        id: "welcome-" + Date.now(),
-        content: getRandomWelcomeMessage(),
-        role: "assistant",
-        timestamp: new Date(),
-      },
-    ])
+  // Special modes
+  if (isImagineMode) {
+    return (
+      <div className="min-h-screen bg-black">
+        <ImaginePage onBack={() => setIsImagineMode(false)} />
+      </div>
+    )
   }
 
-  const handleLoadHistorySession = (sessionMessages: Message[]) => {
-    setMessages(sessionMessages)
-    setIsHistoryOpen(false)
-    console.log("📚 Loaded chat session with", sessionMessages.length, "messages")
+  if (isDiscoverMode) {
+    return (
+      <div className="min-h-screen bg-black">
+        <DiscoverPage onBack={() => setIsDiscoverMode(false)} />
+      </div>
+    )
   }
 
-  const handleDiscoverClick = () => {
-    console.log("🟣 Discover button clicked - switching to discover mode")
-    setIsDiscoverMode(true)
+  if (isVoiceMode) {
+    return (
+      <div
+        className="min-h-screen"
+        style={{
+          backgroundImage: "url(/indian-flag.png)",
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+        }}
+      >
+        <VoiceOnlyMode onSendMessage={handleSendMessage} isLoading={isLoading} onBack={() => setIsVoiceMode(false)} />
+      </div>
+    )
   }
 
-  const handleVoiceModeClick = () => {
-    console.log("🟠 Voice button clicked - switching to voice mode")
-    setIsVoiceMode(true)
+  // Answer Mode - Full Screen Reading Experience
+  if (isAnswerMode) {
+    return (
+      <motion.div
+        className="min-h-screen bg-black text-white overflow-y-auto"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.5 }}
+      >
+        {/* Header */}
+        <div className="sticky top-0 bg-black/90 backdrop-blur-sm border-b border-gray-800 z-10">
+          <div className="flex items-center justify-between p-4">
+            <motion.button
+              onClick={handleBackToHome}
+              className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </motion.button>
+
+            <div className="flex items-center gap-4">
+              <motion.button
+                className="text-gray-400 hover:text-white transition-colors"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <Bookmark className="w-5 h-5" />
+              </motion.button>
+              <motion.button
+                className="text-gray-400 hover:text-white transition-colors"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <Share2 className="w-5 h-5" />
+              </motion.button>
+            </div>
+          </div>
+        </div>
+
+        {/* Content */}
+        <div className="max-w-4xl mx-auto px-4 py-8">
+          {/* Question */}
+          <motion.h1
+            className="text-2xl md:text-3xl font-normal text-white mb-8 leading-relaxed"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+          >
+            {currentQuestion}
+          </motion.h1>
+
+          {/* Filter Buttons */}
+          <motion.div
+            className="flex gap-3 mb-8"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+          >
+            <div className="px-4 py-2 bg-white/10 rounded-full text-sm text-white border border-white/20">
+              🦈 𝕏𝕪𝕝𝕠𝔾𝕖𝕟 Pro
+            </div>
+            <div className="px-4 py-2 bg-white/5 rounded-full text-sm text-gray-400 border border-white/10">
+              📚 Sources
+            </div>
+            <div className="px-4 py-2 bg-white/5 rounded-full text-sm text-gray-400 border border-white/10">
+              🇮🇳 Indian Context
+            </div>
+          </motion.div>
+
+          {/* Loading State */}
+          {isLoading && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-8">
+              <TypingIndicator />
+            </motion.div>
+          )}
+
+          {/* Answer Content */}
+          {currentAnswer && (
+            <motion.div
+              className="prose prose-invert max-w-none"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 }}
+            >
+              {formatAIContent(currentAnswer)}
+            </motion.div>
+          )}
+
+          <div ref={messagesEndRef} />
+        </div>
+
+        {/* Bottom Input */}
+        <div className="sticky bottom-0 bg-black/90 backdrop-blur-sm border-t border-gray-800 p-4">
+          <div className="max-w-4xl mx-auto">
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Ask follow-up..."
+                className="w-full bg-gray-900 border border-gray-700 rounded-full px-6 py-4 text-white placeholder-gray-400 focus:outline-none focus:border-cyan-500 transition-colors"
+                value={inputText}
+                onChange={(e) => setInputText(e.target.value)}
+                onKeyPress={(e) => {
+                  if (e.key === "Enter" && inputText.trim()) {
+                    handleSendMessage(inputText.trim())
+                  }
+                }}
+              />
+              <motion.button
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                🎤
+              </motion.button>
+            </div>
+          </div>
+        </div>
+      </motion.div>
+    )
   }
 
-  const handleImageGenerationClick = () => {
-    console.log("🟣 Imagine button clicked - switching to imagine mode")
-    setIsImagineMode(true)
-  }
-
+  // Homepage - Clean and Minimal
   return (
     <div
       className="min-h-screen relative overflow-hidden"
@@ -267,31 +412,32 @@ export default function AIWebChat() {
         backgroundAttachment: "fixed",
       }}
     >
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm"></div>
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
 
-      <div
-        className={`container mx-auto ${isMobile ? "max-w-full px-0" : "max-w-4xl"} h-screen flex flex-col relative z-10`}
-      >
+      <div className="relative z-10 min-h-screen flex flex-col">
+        {/* Header */}
         <motion.header
-          className={`flex items-center justify-between ${isMobile ? "p-1.5" : "p-2"} border-b border-white/20 backdrop-blur-md bg-white/10 relative`}
+          className="flex items-center justify-between p-4 md:p-6"
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          <div className="flex items-center gap-2">
-            <SharkLogo size={isMobile ? "sm" : "md"} animated={true} glowing={isSpeaking} />
+          <div className="flex items-center gap-3">
+            <SharkLogo size="md" animated={true} />
             <div>
-              <h1 className={`${isMobile ? "text-base" : "text-xl"} font-bold text-white flex items-center gap-2`}>
-                <motion.span
+              <motion.h1
+                className="text-xl md:text-2xl font-bold text-white flex items-center gap-2"
+                animate={{
+                  backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"],
+                }}
+                transition={{
+                  duration: 3,
+                  repeat: Number.POSITIVE_INFINITY,
+                  ease: "linear",
+                }}
+              >
+                <span
                   className="bg-gradient-to-r from-purple-400 via-pink-400 to-cyan-400 bg-clip-text text-transparent font-extrabold tracking-wider"
-                  animate={{
-                    backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"],
-                  }}
-                  transition={{
-                    duration: 3,
-                    repeat: Number.POSITIVE_INFINITY,
-                    ease: "linear",
-                  }}
                   style={{
                     backgroundSize: "200% 200%",
                     textShadow: "0 0 20px rgba(168, 85, 247, 0.5)",
@@ -299,127 +445,104 @@ export default function AIWebChat() {
                   }}
                 >
                   𝕏𝕪𝕝𝕠𝔾𝕖𝕟
-                </motion.span>
+                </span>
                 🇮🇳
-                <motion.span
-                  className={`${isMobile ? "text-xs px-1.5 py-0.5" : "text-xs px-2 py-1"} rounded-full font-mono bg-gradient-to-r from-purple-500 to-cyan-500 text-white`}
-                  animate={{
-                    boxShadow: ["0 0 5px #a855f7", "0 0 15px #06b6d4", "0 0 5px #a855f7"],
-                  }}
-                  transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY }}
-                >
-                  SMART AI 🧠
-                </motion.span>
-              </h1>
-              {!isMobile && (
-                <p className="text-xs text-white/80 font-mono">
-                  ✨ "Everything you can imagine is real."
-                  {isLoading && " • 🔄 Processing..."}
-                </p>
-              )}
+              </motion.h1>
             </div>
           </div>
 
-          {/* Desktop Controls - Clean Icons Only */}
-          {!isMobile && (
-            <div className="flex items-center gap-4">
-              <motion.button
-                onClick={() => setIsHistoryOpen(true)}
-                className="text-white hover:text-cyan-300 transition-colors"
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.95 }}
-                title="Chat History"
-              >
-                <Clock className="w-6 h-6" />
-              </motion.button>
-
-              <motion.button
-                onClick={clearChat}
-                className="text-red-400 hover:text-red-300 transition-colors"
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.95 }}
-                title="Clear Chat"
-              >
-                <Trash2 className="w-6 h-6" />
-              </motion.button>
-            </div>
-          )}
-
-          {/* Mobile Controls - Clean Icons Only */}
-          {isMobile && (
-            <div className="flex items-center gap-3">
-              <motion.button
-                onClick={() => setIsHistoryOpen(true)}
-                className="text-white hover:text-cyan-300 transition-colors"
-                whileTap={{ scale: 0.95 }}
-                title="History"
-              >
-                <Clock className="w-5 h-5" />
-              </motion.button>
-
-              <motion.button
-                onClick={clearChat}
-                className="text-red-400 hover:text-red-300 transition-colors"
-                whileTap={{ scale: 0.95 }}
-                title="Clear Chat"
-              >
-                <Trash2 className="w-5 h-5" />
-              </motion.button>
-            </div>
-          )}
+          <motion.button
+            onClick={() => setIsHistoryOpen(true)}
+            className="text-white/60 hover:text-white transition-colors"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            title="Chat History"
+          >
+            <Clock className="w-6 h-6" />
+          </motion.button>
         </motion.header>
 
-        {/* Mobile Status Bar - More Compact */}
-        {isMobile && (
-          <div className="px-2 py-0.5 bg-black/20 border-b border-white/10">
-            <p className="text-xs text-white/80 font-mono text-center">
-              ✨ "Everything you can imagine is real."
-              {isLoading && " • 🔄 Processing..."}
-            </p>
-          </div>
-        )}
+        {/* Main Content */}
+        <div className="flex-1 flex flex-col items-center justify-center px-4 pb-32">
+          <motion.div
+            className="text-center mb-16"
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.2 }}
+          >
+            <motion.div
+              className="w-20 h-20 mx-auto mb-8 text-6xl"
+              animate={{
+                scale: [1, 1.1, 1],
+                rotate: [0, 5, -5, 0],
+              }}
+              transition={{
+                duration: 4,
+                repeat: Number.POSITIVE_INFINITY,
+                ease: "easeInOut",
+              }}
+            >
+              🦈
+            </motion.div>
 
-        {isImagineMode ? (
-          <div className="flex-1 min-h-0">
-            <ImaginePage onBack={() => setIsImagineMode(false)} />
-          </div>
-        ) : isDiscoverMode ? (
-          <div className="flex-1 min-h-0">
-            <DiscoverPage onBack={() => setIsDiscoverMode(false)} />
-          </div>
-        ) : isVoiceMode ? (
-          <VoiceOnlyMode onSendMessage={handleSendMessage} isLoading={isLoading} onBack={() => setIsVoiceMode(false)} />
-        ) : (
-          <>
-            <div className="flex-1 overflow-y-auto">
-              <ChatWindow
-                messages={messages}
-                isLoading={isLoading}
-                onRelatedQuestionClick={handleRelatedQuestionClick}
-              />
-              {isLoading && <SharkLoading />}
-              <div ref={messagesEndRef} />
-            </div>
+            <h2 className="text-4xl md:text-6xl font-light text-white mb-6 leading-tight">
+              Everything
+              <br />
+              <span className="bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
+                you can
+              </span>
+              <br />
+              imagine is
+              <br />
+              <span className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">real</span>
+            </h2>
+          </motion.div>
+        </div>
 
-            <InputBar
-              inputText={inputText}
-              setInputText={setInputText}
-              onSendMessage={handleSendMessage}
-              isLoading={isLoading}
-              voiceEnabled={false}
-              onDiscoverClick={handleDiscoverClick}
-              onVoiceModeClick={handleVoiceModeClick}
-              onImageGenerationClick={handleImageGenerationClick}
-            />
-          </>
-        )}
+        {/* Bottom Input */}
+        <motion.div
+          className="sticky bottom-0 p-4 md:p-6"
+          initial={{ opacity: 0, y: 50 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 0.4 }}
+        >
+          <InputBar
+            inputText={inputText}
+            setInputText={setInputText}
+            onSendMessage={handleSendMessage}
+            isLoading={isLoading}
+            voiceEnabled={false}
+            onDiscoverClick={handleDiscoverClick}
+            onVoiceModeClick={handleVoiceModeClick}
+            onImageGenerationClick={handleImageGenerationClick}
+          />
+        </motion.div>
       </div>
 
       {/* Chat History Modal */}
       <ChatHistory
         isOpen={isHistoryOpen}
         onClose={() => setIsHistoryOpen(false)}
-        onLoadSession={handleLoadHistorySession}
+        onLoadSession={(sessionMessages) => {
+          console.log("📖 Loading session with", sessionMessages.length, "messages")
+
+          // Set the messages
+          setMessages(sessionMessages)
+
+          // Find the first user message for the question
+          const firstUserMessage = sessionMessages.find((msg) => msg.role === "user")
+          const lastAssistantMessage = sessionMessages.find((msg) => msg.role === "assistant")
+
+          if (firstUserMessage && lastAssistantMessage) {
+            // Set up the answer mode with the loaded conversation
+            setCurrentQuestion(firstUserMessage.content)
+            setCurrentAnswer(lastAssistantMessage.content)
+            setIsAnswerMode(true)
+          }
+
+          // Close the history modal
+          setIsHistoryOpen(false)
+        }}
       />
     </div>
   )
