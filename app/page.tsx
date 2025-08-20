@@ -356,11 +356,11 @@ I'm working in smart mode and ready to provide incredibly detailed, fascinating 
   const handleVoiceModeClick = () => setIsVoiceMode(true)
   const handleImageGenerationClick = () => setIsImagineMode(true)
 
-  // Responsive padding based on screen size
+  // Responsive padding based on screen size - Mobile gets zero padding
   const getResponsivePadding = () => {
     switch (screenSize) {
       case "mobile":
-        return "px-1 py-3" // Minimal padding for mobile
+        return "px-0 py-2" // Zero horizontal padding for mobile
       case "tablet":
         return "px-4 py-6" // Medium padding for tablets
       default:
@@ -371,7 +371,7 @@ I'm working in smart mode and ready to provide incredibly detailed, fascinating 
   const getResponsiveContentWidth = () => {
     switch (screenSize) {
       case "mobile":
-        return "w-full" // Full width on mobile
+        return "w-full min-w-full max-w-full" // Force full width on mobile
       case "tablet":
         return "w-full max-w-4xl mx-auto" // Constrained on tablet
       default:
@@ -382,7 +382,7 @@ I'm working in smart mode and ready to provide incredibly detailed, fascinating 
   // Special modes
   if (isImagineMode) {
     return (
-      <div className="min-h-screen bg-black">
+      <div className="min-h-screen bg-black full-viewport">
         <ImaginePage onBack={() => setIsImagineMode(false)} />
       </div>
     )
@@ -390,7 +390,7 @@ I'm working in smart mode and ready to provide incredibly detailed, fascinating 
 
   if (isDiscoverMode) {
     return (
-      <div className="min-h-screen bg-black">
+      <div className="min-h-screen bg-black full-viewport">
         <DiscoverPage onBack={() => setIsDiscoverMode(false)} />
       </div>
     )
@@ -399,7 +399,7 @@ I'm working in smart mode and ready to provide incredibly detailed, fascinating 
   if (isVoiceMode) {
     return (
       <div
-        className="min-h-screen"
+        className="min-h-screen full-viewport"
         style={{
           backgroundImage: "url(/indian-flag.png)",
           backgroundSize: "cover",
@@ -415,14 +415,14 @@ I'm working in smart mode and ready to provide incredibly detailed, fascinating 
   if (isAnswerMode) {
     return (
       <motion.div
-        className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 text-white overflow-y-auto w-full"
+        className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 text-white overflow-y-auto full-viewport mobile-container"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.5 }}
       >
         {/* Header - Responsive */}
-        <div className="sticky top-0 bg-black/95 backdrop-blur-md border-b border-gray-700/50 z-10">
-          <div className="flex items-center justify-between p-2 sm:p-3 md:p-4">
+        <div className="sticky top-0 bg-black/95 backdrop-blur-md border-b border-gray-700/50 z-10 w-full">
+          <div className="flex items-center justify-between p-2 sm:p-3 md:p-4 w-full">
             <motion.button
               onClick={handleBackToHome}
               className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors"
@@ -455,7 +455,7 @@ I'm working in smart mode and ready to provide incredibly detailed, fascinating 
         <div className={getResponsiveContentWidth()}>
           <div className={getResponsivePadding()}>
             {/* Enhanced Filter Buttons */}
-            <div className="flex gap-1 sm:gap-2 md:gap-3 mb-4 sm:mb-6 md:mb-8 overflow-x-auto pb-2 scrollbar-hide">
+            <div className="flex gap-1 sm:gap-2 md:gap-3 mb-4 sm:mb-6 md:mb-8 overflow-x-auto pb-2 scrollbar-hide px-2 sm:px-0">
               <div className="px-2 sm:px-3 md:px-4 py-1 sm:py-2 bg-gradient-to-r from-cyan-500/20 to-purple-500/20 rounded-full text-xs sm:text-sm text-white border border-cyan-400/30 whitespace-nowrap backdrop-blur-sm">
                 🦈 𝕏𝕪𝕝𝕠𝔾𝕖𝕟 Ultra
               </div>
@@ -471,57 +471,59 @@ I'm working in smart mode and ready to provide incredibly detailed, fascinating 
             </div>
 
             {/* Display Full Conversation - Ultra-Premium Styling */}
-            {messages.map((message, index) => (
-              <motion.div
-                key={message.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1 }}
-                className="mb-6 sm:mb-8 md:mb-12"
-              >
-                {message.role === "user" ? (
-                  // User Question - Enhanced Design
-                  <div className="mb-4 sm:mb-6 md:mb-8">
-                    <div className="bg-gradient-to-r from-blue-600/10 to-purple-600/10 border border-blue-400/20 rounded-2xl p-4 sm:p-6 backdrop-blur-sm">
-                      <h2 className="text-lg sm:text-xl md:text-2xl lg:text-3xl xl:text-4xl font-normal text-white leading-tight sm:leading-relaxed">
-                        {message.content}
-                      </h2>
-                      {message.hasImage && (
-                        <div className="mt-2 sm:mt-4 text-xs sm:text-sm text-cyan-400 flex items-center gap-2">
-                          📸 <span>Image uploaded for analysis</span>
-                        </div>
-                      )}
+            <div className="px-2 sm:px-0">
+              {messages.map((message, index) => (
+                <motion.div
+                  key={message.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.1 }}
+                  className="mb-6 sm:mb-8 md:mb-12"
+                >
+                  {message.role === "user" ? (
+                    // User Question - Enhanced Design
+                    <div className="mb-4 sm:mb-6 md:mb-8">
+                      <div className="bg-gradient-to-r from-blue-600/10 to-purple-600/10 border border-blue-400/20 rounded-2xl p-4 sm:p-6 backdrop-blur-sm">
+                        <h2 className="text-lg sm:text-xl md:text-2xl lg:text-3xl xl:text-4xl font-normal text-white leading-tight sm:leading-relaxed">
+                          {message.content}
+                        </h2>
+                        {message.hasImage && (
+                          <div className="mt-2 sm:mt-4 text-xs sm:text-sm text-cyan-400 flex items-center gap-2">
+                            📸 <span>Image uploaded for analysis</span>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ) : (
-                  // AI Answer - Ultra-Premium Design
-                  <div className="prose prose-invert max-w-none bg-gradient-to-br from-gray-800/30 to-gray-900/30 border border-gray-700/30 rounded-2xl p-4 sm:p-6 md:p-8 backdrop-blur-sm">
-                    {formatAIContent(message.content)}
-                  </div>
-                )}
-              </motion.div>
-            ))}
+                  ) : (
+                    // AI Answer - Ultra-Premium Design
+                    <div className="prose prose-invert max-w-none bg-gradient-to-br from-gray-800/30 to-gray-900/30 border border-gray-700/30 rounded-2xl p-4 sm:p-6 md:p-8 backdrop-blur-sm">
+                      {formatAIContent(message.content)}
+                    </div>
+                  )}
+                </motion.div>
+              ))}
 
-            {/* Enhanced Loading State */}
-            {isLoading && (
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-4 sm:mb-6">
-                <div className="bg-gradient-to-r from-cyan-500/10 to-purple-500/10 border border-cyan-400/20 rounded-2xl p-4 sm:p-6 backdrop-blur-sm">
-                  <TypingIndicator />
-                  <p className="text-cyan-300 text-sm mt-2">
-                    🧠 Analyzing and crafting your ultra-detailed response...
-                  </p>
-                </div>
-              </motion.div>
-            )}
+              {/* Enhanced Loading State */}
+              {isLoading && (
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-4 sm:mb-6">
+                  <div className="bg-gradient-to-r from-cyan-500/10 to-purple-500/10 border border-cyan-400/20 rounded-2xl p-4 sm:p-6 backdrop-blur-sm">
+                    <TypingIndicator />
+                    <p className="text-cyan-300 text-sm mt-2">
+                      🧠 Analyzing and crafting your ultra-detailed response...
+                    </p>
+                  </div>
+                </motion.div>
+              )}
+            </div>
           </div>
 
           <div ref={messagesEndRef} />
         </div>
 
         {/* Enhanced Bottom Follow-up Input */}
-        <div className="sticky bottom-0 bg-black/95 backdrop-blur-md border-t border-gray-700/50 p-2 sm:p-3 md:p-4">
+        <div className="sticky bottom-0 bg-black/95 backdrop-blur-md border-t border-gray-700/50 p-2 sm:p-3 md:p-4 w-full">
           <div className={getResponsiveContentWidth()}>
-            <div className="relative">
+            <div className="relative px-2 sm:px-0">
               <input
                 type="text"
                 placeholder="Ask follow-up for even deeper insights..."
@@ -554,7 +556,7 @@ I'm working in smart mode and ready to provide incredibly detailed, fascinating 
   // Homepage - Ultra-Premium Design
   return (
     <div
-      className="min-h-screen relative overflow-hidden"
+      className="min-h-screen relative overflow-hidden full-viewport mobile-container"
       style={{
         backgroundImage: "url(/tech-background.png)",
         backgroundSize: "cover",
@@ -568,7 +570,7 @@ I'm working in smart mode and ready to provide incredibly detailed, fascinating 
       <div className="relative z-10 min-h-screen flex flex-col w-full overflow-hidden">
         {/* Enhanced Header */}
         <motion.header
-          className="flex items-center justify-between p-2 sm:p-3 md:p-4 lg:p-6"
+          className="flex items-center justify-between p-2 sm:p-3 md:p-4 lg:p-6 w-full"
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
@@ -656,7 +658,7 @@ I'm working in smart mode and ready to provide incredibly detailed, fascinating 
 
         {/* Enhanced Bottom Input */}
         <motion.div
-          className="sticky bottom-0 p-2 sm:p-3 md:p-4 lg:p-6"
+          className="sticky bottom-0 p-2 sm:p-3 md:p-4 lg:p-6 w-full"
           initial={{ opacity: 0, y: 50 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.4 }}
