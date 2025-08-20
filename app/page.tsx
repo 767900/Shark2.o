@@ -108,10 +108,10 @@ const formatAIContent = (content: string): JSX.Element[] => {
             key={`bullet-${index}`}
             className="mb-3 sm:mb-4 md:mb-6 flex items-start gap-2 sm:gap-3 md:gap-4 bg-gray-800/30 rounded-lg p-3 sm:p-4 border-l-2 border-cyan-400"
           >
-            <span className="text-cyan-400 text-sm sm:text-base md:text-lg mt-0.5 sm:mt-1 md:mt-2 flex-shrink-0 font-bold">
+            <span className="text-cyan-400 text-base sm:text-lg md:text-xl mt-0.5 sm:mt-1 md:mt-2 flex-shrink-0 font-bold">
               •
             </span>
-            <p className="text-sm sm:text-base md:text-lg leading-relaxed">
+            <p className="text-base sm:text-lg md:text-xl leading-relaxed">
               <span className="font-bold text-cyan-300">{term}:</span>{" "}
               <span className="text-gray-200">{description}</span>
             </p>
@@ -123,10 +123,10 @@ const formatAIContent = (content: string): JSX.Element[] => {
             key={`bullet-${index}`}
             className="mb-2 sm:mb-3 md:mb-4 flex items-start gap-2 sm:gap-3 md:gap-4 bg-gray-800/20 rounded-lg p-2 sm:p-3"
           >
-            <span className="text-cyan-400 text-sm sm:text-base md:text-lg mt-0.5 sm:mt-1 md:mt-2 flex-shrink-0 font-bold">
+            <span className="text-cyan-400 text-base sm:text-lg md:text-xl mt-0.5 sm:mt-1 md:mt-2 flex-shrink-0 font-bold">
               •
             </span>
-            <p className="text-gray-200 text-sm sm:text-base md:text-lg leading-relaxed">{bulletText}</p>
+            <p className="text-gray-200 text-base sm:text-lg md:text-xl leading-relaxed">{bulletText}</p>
           </div>,
         )
       }
@@ -141,7 +141,7 @@ const formatAIContent = (content: string): JSX.Element[] => {
       formattedElements.push(
         <div
           key={`interactive-${index}`}
-          className="text-white text-sm sm:text-base md:text-lg leading-relaxed mb-4 sm:mb-6 md:mb-8 bg-gradient-to-r from-purple-600/20 to-pink-600/20 border border-purple-400/30 rounded-xl p-4 sm:p-6 font-medium"
+          className="text-white text-base sm:text-lg md:text-xl leading-relaxed mb-4 sm:mb-6 md:mb-8 bg-gradient-to-r from-purple-600/20 to-pink-600/20 border border-purple-400/30 rounded-xl p-4 sm:p-6 font-medium"
         >
           🤔 {trimmedLine}
         </div>,
@@ -154,7 +154,7 @@ const formatAIContent = (content: string): JSX.Element[] => {
       formattedElements.push(
         <div
           key={`emoji-section-${index}`}
-          className="text-white text-sm sm:text-base md:text-lg leading-relaxed mb-4 sm:mb-6 bg-gradient-to-r from-blue-600/20 to-cyan-600/20 border border-blue-400/30 rounded-xl p-4 sm:p-6 font-medium"
+          className="text-white text-base sm:text-lg md:text-xl leading-relaxed mb-4 sm:mb-6 bg-gradient-to-r from-blue-600/20 to-cyan-600/20 border border-blue-400/30 rounded-xl p-4 sm:p-6 font-medium"
         >
           {trimmedLine}
         </div>,
@@ -162,11 +162,11 @@ const formatAIContent = (content: string): JSX.Element[] => {
       return
     }
 
-    // Regular paragraphs with enhanced styling
+    // Regular paragraphs with enhanced styling - MOBILE TEXT SIZE INCREASED
     formattedElements.push(
       <p
         key={`para-${index}`}
-        className="text-gray-200 text-sm sm:text-base md:text-lg leading-relaxed mb-3 sm:mb-4 md:mb-6 font-light"
+        className="text-gray-200 text-base sm:text-lg md:text-xl lg:text-2xl leading-relaxed mb-3 sm:mb-4 md:mb-6 font-light"
       >
         {trimmedLine}
       </p>,

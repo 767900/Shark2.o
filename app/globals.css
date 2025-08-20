@@ -169,3 +169,77 @@
   padding: 0;
   overflow-x: hidden;
 }
+
+/* Enhanced mobile text sizing - BIGGER TEXT FOR MOBILE */
+@media screen and (max-width: 640px) {
+  /* Regular paragraph text - INCREASED SIZE */
+  .text-gray-200,
+  .text-gray-100,
+  .text-white {
+    font-size: 16px !important;
+    line-height: 1.6 !important;
+  }
+
+  /* Answer content paragraphs - BIGGER */
+  p {
+    font-size: 16px !important;
+    line-height: 1.6 !important;
+  }
+
+  /* Bullet point text - BIGGER */
+  li {
+    font-size: 16px !important;
+    line-height: 1.6 !important;
+  }
+
+  /* Specific text classes - BIGGER */
+  .text-base {
+    font-size: 16px !important;
+  }
+
+  .text-sm {
+    font-size: 14px !important;
+  }
+
+  .text-lg {
+    font-size: 18px !important;
+  }
+
+  .text-xl {
+    font-size: 20px !important;
+  }
+
+  /* Keep headings perfect as they are */
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    /* Headings stay the same - they're already perfect */
+  }
+}
+
+/* Tablet text sizing */
+@media screen and (min-width: 641px) and (max-width: 1024px) {
+  .text-gray-200,
+  .text-gray-100,
+  .text-white,
+  p,
+  li {
+    font-size: 18px !important;
+    line-height: 1.6 !important;
+  }
+}
+
+/* Desktop text sizing */
+@media screen and (min-width: 1025px) {
+  .text-gray-200,
+  .text-gray-100,
+  .text-white,
+  p,
+  li {
+    font-size: 20px !important;
+    line-height: 1.6 !important;
+  }
+}
