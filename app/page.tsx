@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react"
 import { motion } from "framer-motion"
-import { ArrowLeft, Bookmark, Share2, Clock } from "lucide-react"
+import { ArrowLeft, Bookmark, Share2, Clock, Send } from "lucide-react"
 import InputBar from "@/components/input-bar"
 import SharkLogo from "@/components/shark-logo"
 import VoiceOnlyMode from "@/components/voice-only-mode"
@@ -41,7 +41,7 @@ const getRandomWelcomeMessage = () => {
   return welcomeMessages[Math.floor(Math.random() * welcomeMessages.length)]
 }
 
-// Format AI content for full-screen reading
+// Format AI content for full-screen reading with ultra-premium styling
 const formatAIContent = (content: string): JSX.Element[] => {
   const lines = content.split("\n")
   const formattedElements: JSX.Element[] = []
@@ -50,20 +50,34 @@ const formatAIContent = (content: string): JSX.Element[] => {
     const trimmedLine = line.trim()
 
     if (!trimmedLine) {
-      formattedElements.push(<div key={`space-${index}`} className="h-4 md:h-6" />)
+      formattedElements.push(<div key={`space-${index}`} className="h-3 sm:h-4 md:h-6" />)
       return
     }
 
-    // Main headings
+    // Main headings with enhanced styling
     if (trimmedLine.endsWith(":") || (trimmedLine.startsWith("**") && trimmedLine.endsWith("**"))) {
       const headingText = trimmedLine.replace(/\*\*/g, "").replace(":", "")
       formattedElements.push(
         <h2
           key={`heading-${index}`}
-          className="text-xl md:text-2xl font-bold text-white mb-4 md:mb-6 mt-6 md:mt-8 first:mt-0 leading-tight"
+          className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-white mb-3 sm:mb-4 md:mb-6 mt-4 sm:mt-6 md:mt-8 first:mt-0 leading-tight bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent"
         >
           {headingText}
         </h2>,
+      )
+      return
+    }
+
+    // Layer headings (Layer 1, Layer 2, etc.)
+    if (/^Layer \d+/.test(trimmedLine) || /^\*\*Layer \d+/.test(trimmedLine)) {
+      const layerText = trimmedLine.replace(/\*\*/g, "")
+      formattedElements.push(
+        <h3
+          key={`layer-${index}`}
+          className="text-base sm:text-lg md:text-xl lg:text-2xl font-bold text-cyan-300 mb-2 sm:mb-3 md:mb-4 mt-6 sm:mt-8 md:mt-10 leading-tight border-l-4 border-cyan-400 pl-4"
+        >
+          {layerText}
+        </h3>,
       )
       return
     }
@@ -73,7 +87,7 @@ const formatAIContent = (content: string): JSX.Element[] => {
       formattedElements.push(
         <h3
           key={`numbered-${index}`}
-          className="text-lg md:text-xl font-bold text-white mb-3 md:mb-4 mt-4 md:mt-6 leading-tight"
+          className="text-base sm:text-lg md:text-xl lg:text-2xl font-bold text-white mb-2 sm:mb-3 md:mb-4 mt-3 sm:mt-4 md:mt-6 leading-tight"
         >
           {trimmedLine}
         </h3>,
@@ -81,7 +95,7 @@ const formatAIContent = (content: string): JSX.Element[] => {
       return
     }
 
-    // Bullet points
+    // Enhanced bullet points with better styling
     if (trimmedLine.startsWith("• ") || trimmedLine.startsWith("- ")) {
       const bulletText = trimmedLine.substring(2)
       const parts = bulletText.split(":")
@@ -90,28 +104,70 @@ const formatAIContent = (content: string): JSX.Element[] => {
         const term = parts[0].trim()
         const description = parts.slice(1).join(":").trim()
         formattedElements.push(
-          <div key={`bullet-${index}`} className="mb-4 md:mb-6 flex items-start gap-3 md:gap-4">
-            <span className="text-cyan-400 text-base md:text-lg mt-1 md:mt-2 flex-shrink-0">•</span>
-            <p className="text-base md:text-lg leading-relaxed">
-              <span className="font-semibold text-white">{term}:</span>{" "}
+          <div
+            key={`bullet-${index}`}
+            className="mb-3 sm:mb-4 md:mb-6 flex items-start gap-2 sm:gap-3 md:gap-4 bg-gray-800/30 rounded-lg p-3 sm:p-4 border-l-2 border-cyan-400"
+          >
+            <span className="text-cyan-400 text-sm sm:text-base md:text-lg mt-0.5 sm:mt-1 md:mt-2 flex-shrink-0 font-bold">
+              •
+            </span>
+            <p className="text-sm sm:text-base md:text-lg leading-relaxed">
+              <span className="font-bold text-cyan-300">{term}:</span>{" "}
               <span className="text-gray-200">{description}</span>
             </p>
           </div>,
         )
       } else {
         formattedElements.push(
-          <div key={`bullet-${index}`} className="mb-3 md:mb-4 flex items-start gap-3 md:gap-4">
-            <span className="text-cyan-400 text-base md:text-lg mt-1 md:mt-2 flex-shrink-0">•</span>
-            <p className="text-gray-200 text-base md:text-lg leading-relaxed">{bulletText}</p>
+          <div
+            key={`bullet-${index}`}
+            className="mb-2 sm:mb-3 md:mb-4 flex items-start gap-2 sm:gap-3 md:gap-4 bg-gray-800/20 rounded-lg p-2 sm:p-3"
+          >
+            <span className="text-cyan-400 text-sm sm:text-base md:text-lg mt-0.5 sm:mt-1 md:mt-2 flex-shrink-0 font-bold">
+              •
+            </span>
+            <p className="text-gray-200 text-sm sm:text-base md:text-lg leading-relaxed">{bulletText}</p>
           </div>,
         )
       }
       return
     }
 
-    // Regular paragraphs
+    // Interactive elements (questions, challenges)
+    if (
+      trimmedLine.includes("?") &&
+      (trimmedLine.includes("What") || trimmedLine.includes("How") || trimmedLine.includes("Challenge"))
+    ) {
+      formattedElements.push(
+        <div
+          key={`interactive-${index}`}
+          className="text-white text-sm sm:text-base md:text-lg leading-relaxed mb-4 sm:mb-6 md:mb-8 bg-gradient-to-r from-purple-600/20 to-pink-600/20 border border-purple-400/30 rounded-xl p-4 sm:p-6 font-medium"
+        >
+          🤔 {trimmedLine}
+        </div>,
+      )
+      return
+    }
+
+    // Emoji-prefixed sections (🇮🇳, 🚀, etc.)
+    if (/^[🌟🚀🇮🇳🎯💡📚🔥⚡🌈✨🎨🧠💎🏆🎪🎭🎨]/u.test(trimmedLine)) {
+      formattedElements.push(
+        <div
+          key={`emoji-section-${index}`}
+          className="text-white text-sm sm:text-base md:text-lg leading-relaxed mb-4 sm:mb-6 bg-gradient-to-r from-blue-600/20 to-cyan-600/20 border border-blue-400/30 rounded-xl p-4 sm:p-6 font-medium"
+        >
+          {trimmedLine}
+        </div>,
+      )
+      return
+    }
+
+    // Regular paragraphs with enhanced styling
     formattedElements.push(
-      <p key={`para-${index}`} className="text-gray-200 text-base md:text-lg leading-relaxed mb-4 md:mb-6">
+      <p
+        key={`para-${index}`}
+        className="text-gray-200 text-sm sm:text-base md:text-lg leading-relaxed mb-3 sm:mb-4 md:mb-6 font-light"
+      >
         {trimmedLine}
       </p>,
     )
@@ -123,29 +179,32 @@ const formatAIContent = (content: string): JSX.Element[] => {
 export default function AIWebChat() {
   const [messages, setMessages] = useState<Message[]>([])
   const [inputText, setInputText] = useState("")
+  const [followUpText, setFollowUpText] = useState("")
   const [isLoading, setIsLoading] = useState(false)
-  const [currentQuestion, setCurrentQuestion] = useState("")
-  const [currentAnswer, setCurrentAnswer] = useState("")
   const [isAnswerMode, setIsAnswerMode] = useState(false)
   const [isVoiceMode, setIsVoiceMode] = useState(false)
   const [isDiscoverMode, setIsDiscoverMode] = useState(false)
   const [isImagineMode, setIsImagineMode] = useState(false)
   const [isHistoryOpen, setIsHistoryOpen] = useState(false)
-  const [isMobile, setIsMobile] = useState(false)
+  const [screenSize, setScreenSize] = useState<"mobile" | "tablet" | "desktop">("desktop")
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
-  // Detect mobile device
+  // Enhanced device detection for all screen sizes
   useEffect(() => {
-    const checkMobile = () => {
-      const isMobileDevice =
-        window.innerWidth < 768 ||
-        /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
-      setIsMobile(isMobileDevice)
+    const checkScreenSize = () => {
+      const width = window.innerWidth
+      if (width < 640) {
+        setScreenSize("mobile") // iPhone, small Android
+      } else if (width < 1024) {
+        setScreenSize("tablet") // iPad, large phones, small tablets
+      } else {
+        setScreenSize("desktop") // Laptops, desktops
+      }
     }
 
-    checkMobile()
-    window.addEventListener("resize", checkMobile)
-    return () => window.removeEventListener("resize", checkMobile)
+    checkScreenSize()
+    window.addEventListener("resize", checkScreenSize)
+    return () => window.removeEventListener("resize", checkScreenSize)
   }, [])
 
   const scrollToBottom = () => {
@@ -154,17 +213,16 @@ export default function AIWebChat() {
 
   useEffect(() => {
     scrollToBottom()
-  }, [currentAnswer])
+  }, [messages])
 
   const handleSendMessage = async (message: string, isVoice = false, image?: File) => {
     if ((!message.trim() && !image) || isLoading) return
 
     // Switch to answer mode with smooth transition
-    setCurrentQuestion(message)
-    setCurrentAnswer("")
     setIsAnswerMode(true)
     setIsLoading(true)
     setInputText("")
+    setFollowUpText("")
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -174,6 +232,10 @@ export default function AIWebChat() {
       isVoice,
       hasImage: !!image,
     }
+
+    // Add user message to conversation immediately
+    const updatedMessages = [...messages, userMessage]
+    setMessages(updatedMessages)
 
     try {
       console.log("🚀 CLIENT: Sending message to 𝕏𝕪𝕝𝕠𝔾𝕖𝕟:", message)
@@ -191,7 +253,7 @@ export default function AIWebChat() {
         })
       } else {
         const requestBody = {
-          messages: [userMessage].map((msg) => ({
+          messages: updatedMessages.map((msg) => ({
             role: msg.role,
             content: msg.content,
           })),
@@ -212,9 +274,8 @@ export default function AIWebChat() {
       }
 
       const data = await response.json()
-      setCurrentAnswer(data.content || "No response received")
 
-      // Save to history
+      // Add AI response to conversation
       const aiMessage: Message = {
         id: (Date.now() + 1).toString(),
         content: data.content || "No response received",
@@ -225,32 +286,98 @@ export default function AIWebChat() {
         isError: false,
       }
 
-      const sessionMessages = [userMessage, aiMessage]
-      setMessages(sessionMessages)
+      const finalMessages = [...updatedMessages, aiMessage]
+      setMessages(finalMessages)
 
       // Save session to chat history
-      saveSession(sessionMessages)
-      console.log("💾 Chat session saved with", sessionMessages.length, "messages")
+      saveSession(finalMessages)
+      console.log("💾 Chat session saved with", finalMessages.length, "messages")
     } catch (error) {
       console.error("💥 CLIENT: Error:", error)
-      setCurrentAnswer(
-        `I'm working in smart mode and ready to help! While I may not have real-time data, I can still provide intelligent answers on many topics.\n\n**I can help with:**\n• Programming and technology\n• Indian culture and knowledge\n• Educational topics\n• Problem-solving and analysis\n• General knowledge\n• Image analysis\n\n🚀 **Try asking me about specific topics I can explain!** 🇮🇳`,
-      )
+
+      const errorMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        content: `🚀 **I'm XyloGen, your advanced AI companion from India!** 🇮🇳
+
+**Layer 1 - Foundation:**
+I'm working in smart mode and ready to provide incredibly detailed, fascinating responses on countless topics!
+
+**Layer 2 - My Capabilities:**
+• **🧠 Deep Analysis**: Multi-layered explanations with rich context
+• **🇮🇳 Indian Expertise**: Cultural knowledge, tech industry insights, local context
+• **💡 Interactive Learning**: Questions, challenges, and thought experiments
+• **🎨 Creative Solutions**: Problem-solving with innovative approaches
+• **📚 Educational Depth**: Step-by-step breakdowns and real examples
+
+**Layer 3 - What I Excel At:**
+• **Programming & Technology**: Python, AI/ML, web development, system design
+• **Indian Culture & Knowledge**: Festivals, traditions, languages, philosophy, cuisine
+• **Educational Topics**: Science, mathematics, literature, philosophy
+• **Problem-Solving**: Analytical thinking, strategic planning, optimization
+• **Creative Projects**: Writing, ideation, artistic concepts
+• **Image Analysis**: Visual understanding and detailed descriptions
+
+**Layer 4 - Interactive Experience:**
+🤔 **What fascinating topic would you like to explore together?**
+
+**Layer 5 - Premium Features:**
+• **Ultra-detailed responses**: 6-layer deep analysis
+• **Real-world connections**: Specific examples and applications
+• **Future implications**: Trends and emerging opportunities
+• **Personalized insights**: Tailored to your interests and goals
+
+**🌟 Try asking me about any topic - I'll provide comprehensive, engaging, and interactive responses that rival the best AI assistants!** ✨`,
+        role: "assistant",
+        timestamp: new Date(),
+        isError: true,
+      }
+
+      const finalMessages = [...updatedMessages, errorMessage]
+      setMessages(finalMessages)
     } finally {
       setIsLoading(false)
     }
   }
 
+  const handleFollowUpSend = async () => {
+    if (!followUpText.trim() || isLoading) return
+
+    // This will add the follow-up to the existing conversation
+    await handleSendMessage(followUpText.trim())
+  }
+
   const handleBackToHome = () => {
     setIsAnswerMode(false)
-    setCurrentQuestion("")
-    setCurrentAnswer("")
     setMessages([])
+    setFollowUpText("")
   }
 
   const handleDiscoverClick = () => setIsDiscoverMode(true)
   const handleVoiceModeClick = () => setIsVoiceMode(true)
   const handleImageGenerationClick = () => setIsImagineMode(true)
+
+  // Responsive padding based on screen size
+  const getResponsivePadding = () => {
+    switch (screenSize) {
+      case "mobile":
+        return "px-1 py-3" // Minimal padding for mobile
+      case "tablet":
+        return "px-4 py-6" // Medium padding for tablets
+      default:
+        return "px-8 py-8" // Full padding for desktop
+    }
+  }
+
+  const getResponsiveContentWidth = () => {
+    switch (screenSize) {
+      case "mobile":
+        return "w-full" // Full width on mobile
+      case "tablet":
+        return "w-full max-w-4xl mx-auto" // Constrained on tablet
+      default:
+        return "max-w-6xl mx-auto" // Large constraint on desktop
+    }
+  }
 
   // Special modes
   if (isImagineMode) {
@@ -284,117 +411,138 @@ export default function AIWebChat() {
     )
   }
 
-  // Answer Mode - Full Screen Reading Experience
+  // Answer Mode - Full Conversation View with Ultra-Premium Styling
   if (isAnswerMode) {
     return (
       <motion.div
-        className="min-h-screen bg-black text-white overflow-y-auto"
+        className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 text-white overflow-y-auto"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.5 }}
       >
-        {/* Header */}
-        <div className="sticky top-0 bg-black/90 backdrop-blur-sm border-b border-gray-800 z-10">
-          <div className="flex items-center justify-between p-3 md:p-4">
+        {/* Header - Responsive */}
+        <div className="sticky top-0 bg-black/95 backdrop-blur-md border-b border-gray-700/50 z-10">
+          <div className="flex items-center justify-between p-2 sm:p-3 md:p-4">
             <motion.button
               onClick={handleBackToHome}
               className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
-              <ArrowLeft className="w-5 h-5" />
+              <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />
             </motion.button>
 
-            <div className="flex items-center gap-3 md:gap-4">
+            <div className="flex items-center gap-2 sm:gap-3 md:gap-4">
               <motion.button
                 className="text-gray-400 hover:text-white transition-colors"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
-                <Bookmark className="w-5 h-5" />
+                <Bookmark className="w-4 h-4 sm:w-5 sm:h-5" />
               </motion.button>
               <motion.button
                 className="text-gray-400 hover:text-white transition-colors"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
-                <Share2 className="w-5 h-5" />
+                <Share2 className="w-4 h-4 sm:w-5 sm:h-5" />
               </motion.button>
             </div>
           </div>
         </div>
 
-        {/* Content - Mobile: Full Width, Desktop: Centered */}
-        <div className={isMobile ? "w-full" : "max-w-4xl mx-auto"}>
-          {/* Question */}
-          <motion.div
-            className="px-4 md:px-8 py-4 md:py-8"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-          >
-            <h1 className="text-xl md:text-2xl lg:text-3xl font-normal text-white mb-6 md:mb-8 leading-relaxed">
-              {currentQuestion}
-            </h1>
-
-            {/* Filter Buttons */}
-            <div className="flex gap-2 md:gap-3 mb-6 md:mb-8 overflow-x-auto pb-2">
-              <div className="px-3 md:px-4 py-2 bg-white/10 rounded-full text-xs md:text-sm text-white border border-white/20 whitespace-nowrap">
-                🦈 𝕏𝕪𝕝𝕠𝔾𝕖𝕟 Pro
+        {/* Full Conversation Content - Ultra-Premium Design */}
+        <div className={getResponsiveContentWidth()}>
+          <div className={getResponsivePadding()}>
+            {/* Enhanced Filter Buttons */}
+            <div className="flex gap-1 sm:gap-2 md:gap-3 mb-4 sm:mb-6 md:mb-8 overflow-x-auto pb-2 scrollbar-hide">
+              <div className="px-2 sm:px-3 md:px-4 py-1 sm:py-2 bg-gradient-to-r from-cyan-500/20 to-purple-500/20 rounded-full text-xs sm:text-sm text-white border border-cyan-400/30 whitespace-nowrap backdrop-blur-sm">
+                🦈 𝕏𝕪𝕝𝕠𝔾𝕖𝕟 Ultra
               </div>
-              <div className="px-3 md:px-4 py-2 bg-white/5 rounded-full text-xs md:text-sm text-gray-400 border border-white/10 whitespace-nowrap">
-                📚 Sources
+              <div className="px-2 sm:px-3 md:px-4 py-1 sm:py-2 bg-white/5 rounded-full text-xs sm:text-sm text-gray-400 border border-white/10 whitespace-nowrap backdrop-blur-sm">
+                📚 6-Layer Analysis
               </div>
-              <div className="px-3 md:px-4 py-2 bg-white/5 rounded-full text-xs md:text-sm text-gray-400 border border-white/10 whitespace-nowrap">
+              <div className="px-2 sm:px-3 md:px-4 py-1 sm:py-2 bg-white/5 rounded-full text-xs sm:text-sm text-gray-400 border border-white/10 whitespace-nowrap backdrop-blur-sm">
                 🇮🇳 Indian Context
               </div>
+              <div className="px-2 sm:px-3 md:px-4 py-1 sm:py-2 bg-white/5 rounded-full text-xs sm:text-sm text-gray-400 border border-white/10 whitespace-nowrap backdrop-blur-sm">
+                🎯 Interactive
+              </div>
             </div>
-          </motion.div>
 
-          {/* Loading State */}
-          {isLoading && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="px-4 md:px-8 mb-6 md:mb-8">
-              <TypingIndicator />
-            </motion.div>
-          )}
+            {/* Display Full Conversation - Ultra-Premium Styling */}
+            {messages.map((message, index) => (
+              <motion.div
+                key={message.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.1 }}
+                className="mb-6 sm:mb-8 md:mb-12"
+              >
+                {message.role === "user" ? (
+                  // User Question - Enhanced Design
+                  <div className="mb-4 sm:mb-6 md:mb-8">
+                    <div className="bg-gradient-to-r from-blue-600/10 to-purple-600/10 border border-blue-400/20 rounded-2xl p-4 sm:p-6 backdrop-blur-sm">
+                      <h2 className="text-lg sm:text-xl md:text-2xl lg:text-3xl xl:text-4xl font-normal text-white leading-tight sm:leading-relaxed">
+                        {message.content}
+                      </h2>
+                      {message.hasImage && (
+                        <div className="mt-2 sm:mt-4 text-xs sm:text-sm text-cyan-400 flex items-center gap-2">
+                          📸 <span>Image uploaded for analysis</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  // AI Answer - Ultra-Premium Design
+                  <div className="prose prose-invert max-w-none bg-gradient-to-br from-gray-800/30 to-gray-900/30 border border-gray-700/30 rounded-2xl p-4 sm:p-6 md:p-8 backdrop-blur-sm">
+                    {formatAIContent(message.content)}
+                  </div>
+                )}
+              </motion.div>
+            ))}
 
-          {/* Answer Content */}
-          {currentAnswer && (
-            <motion.div
-              className="px-4 md:px-8 prose prose-invert max-w-none"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4 }}
-            >
-              {formatAIContent(currentAnswer)}
-            </motion.div>
-          )}
+            {/* Enhanced Loading State */}
+            {isLoading && (
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-4 sm:mb-6">
+                <div className="bg-gradient-to-r from-cyan-500/10 to-purple-500/10 border border-cyan-400/20 rounded-2xl p-4 sm:p-6 backdrop-blur-sm">
+                  <TypingIndicator />
+                  <p className="text-cyan-300 text-sm mt-2">
+                    🧠 Analyzing and crafting your ultra-detailed response...
+                  </p>
+                </div>
+              </motion.div>
+            )}
+          </div>
 
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Bottom Input */}
-        <div className="sticky bottom-0 bg-black/90 backdrop-blur-sm border-t border-gray-800 p-3 md:p-4">
-          <div className="max-w-4xl mx-auto">
+        {/* Enhanced Bottom Follow-up Input */}
+        <div className="sticky bottom-0 bg-black/95 backdrop-blur-md border-t border-gray-700/50 p-2 sm:p-3 md:p-4">
+          <div className={getResponsiveContentWidth()}>
             <div className="relative">
               <input
                 type="text"
-                placeholder="Ask follow-up..."
-                className="w-full bg-gray-900 border border-gray-700 rounded-full px-4 md:px-6 py-3 md:py-4 text-white placeholder-gray-400 focus:outline-none focus:border-cyan-500 transition-colors text-sm md:text-base"
-                value={inputText}
-                onChange={(e) => setInputText(e.target.value)}
+                placeholder="Ask follow-up for even deeper insights..."
+                className="w-full bg-gradient-to-r from-gray-800/50 to-gray-900/50 border border-gray-600/50 rounded-2xl sm:rounded-3xl px-3 sm:px-4 md:px-6 py-2.5 sm:py-3 md:py-4 pr-12 sm:pr-16 md:pr-20 text-white placeholder-gray-400 focus:outline-none focus:border-cyan-500/50 focus:bg-gray-800/70 transition-all duration-300 text-xs sm:text-sm md:text-base backdrop-blur-sm"
+                value={followUpText}
+                onChange={(e) => setFollowUpText(e.target.value)}
                 onKeyPress={(e) => {
-                  if (e.key === "Enter" && inputText.trim()) {
-                    handleSendMessage(inputText.trim())
+                  if (e.key === "Enter" && followUpText.trim() && !isLoading) {
+                    handleFollowUpSend()
                   }
                 }}
+                disabled={isLoading}
               />
               <motion.button
-                className="absolute right-2 md:right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition-colors p-1"
+                onClick={handleFollowUpSend}
+                disabled={!followUpText.trim() || isLoading}
+                className="absolute right-1.5 sm:right-2 md:right-3 top-1/2 transform -translate-y-1/2 p-1.5 sm:p-2 md:p-3 bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-600 hover:to-purple-600 disabled:from-gray-600 disabled:to-gray-700 disabled:cursor-not-allowed rounded-full transition-all duration-300 shadow-lg"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
-                🎤
+                <Send className="w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5 text-white" />
               </motion.button>
             </div>
           </div>
@@ -403,7 +551,7 @@ export default function AIWebChat() {
     )
   }
 
-  // Homepage - Clean and Minimal
+  // Homepage - Ultra-Premium Design
   return (
     <div
       className="min-h-screen relative overflow-hidden"
@@ -412,24 +560,24 @@ export default function AIWebChat() {
         backgroundSize: "cover",
         backgroundPosition: "center",
         backgroundRepeat: "no-repeat",
-        backgroundAttachment: isMobile ? "scroll" : "fixed",
+        backgroundAttachment: screenSize === "mobile" ? "scroll" : "fixed",
       }}
     >
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
+      <div className="absolute inset-0 bg-gradient-to-br from-black/70 via-black/60 to-black/70 backdrop-blur-sm"></div>
 
       <div className="relative z-10 min-h-screen flex flex-col">
-        {/* Header */}
+        {/* Enhanced Header */}
         <motion.header
-          className="flex items-center justify-between p-3 md:p-4 lg:p-6"
+          className="flex items-center justify-between p-2 sm:p-3 md:p-4 lg:p-6"
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          <div className="flex items-center gap-2 md:gap-3">
-            <SharkLogo size={isMobile ? "sm" : "md"} animated={true} />
+          <div className="flex items-center gap-1 sm:gap-2 md:gap-3">
+            <SharkLogo size={screenSize === "mobile" ? "sm" : screenSize === "tablet" ? "md" : "lg"} animated={true} />
             <div>
               <motion.h1
-                className="text-lg md:text-xl lg:text-2xl font-bold text-white flex items-center gap-1 md:gap-2"
+                className="text-sm sm:text-lg md:text-xl lg:text-2xl font-bold text-white flex items-center gap-1 md:gap-2"
                 animate={{
                   backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"],
                 }}
@@ -456,25 +604,25 @@ export default function AIWebChat() {
 
           <motion.button
             onClick={() => setIsHistoryOpen(true)}
-            className="text-white/60 hover:text-white transition-colors p-1"
+            className="text-white/60 hover:text-white transition-colors p-1 bg-white/10 rounded-lg backdrop-blur-sm border border-white/20"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             title="Chat History"
           >
-            <Clock className="w-5 h-5 md:w-6 md:h-6" />
+            <Clock className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" />
           </motion.button>
         </motion.header>
 
-        {/* Main Content */}
-        <div className="flex-1 flex flex-col items-center justify-center px-3 md:px-4 pb-24 md:pb-32">
+        {/* Enhanced Main Content */}
+        <div className="flex-1 flex flex-col items-center justify-center px-2 sm:px-3 md:px-4 pb-20 sm:pb-24 md:pb-32">
           <motion.div
-            className="text-center mb-12 md:mb-16"
+            className="text-center mb-8 sm:mb-12 md:mb-16"
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.2 }}
           >
             <motion.div
-              className="w-16 h-16 md:w-20 md:h-20 mx-auto mb-6 md:mb-8 text-4xl md:text-6xl"
+              className="w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 mx-auto mb-4 sm:mb-6 md:mb-8 text-2xl sm:text-4xl md:text-6xl bg-gradient-to-r from-cyan-400 to-purple-400 rounded-full flex items-center justify-center backdrop-blur-sm border border-white/20"
               animate={{
                 scale: [1, 1.1, 1],
                 rotate: [0, 5, -5, 0],
@@ -488,7 +636,7 @@ export default function AIWebChat() {
               🦈
             </motion.div>
 
-            <h2 className="text-3xl md:text-4xl lg:text-6xl font-light text-white mb-4 md:mb-6 leading-tight px-2">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-6xl font-light text-white mb-3 sm:mb-4 md:mb-6 leading-tight px-2">
               Everything
               <br />
               <span className="bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
@@ -499,12 +647,16 @@ export default function AIWebChat() {
               <br />
               <span className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">real</span>
             </h2>
+
+            <p className="text-sm sm:text-base md:text-lg text-gray-300 max-w-2xl mx-auto leading-relaxed px-4">
+              Ultra-detailed AI responses with 6-layer analysis, interactive learning, and Indian expertise
+            </p>
           </motion.div>
         </div>
 
-        {/* Bottom Input */}
+        {/* Enhanced Bottom Input */}
         <motion.div
-          className="sticky bottom-0 p-3 md:p-4 lg:p-6"
+          className="sticky bottom-0 p-2 sm:p-3 md:p-4 lg:p-6"
           initial={{ opacity: 0, y: 50 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.4 }}
@@ -514,7 +666,7 @@ export default function AIWebChat() {
             setInputText={setInputText}
             onSendMessage={handleSendMessage}
             isLoading={isLoading}
-            voiceEnabled={false}
+            voiceEnabled={true}
             onDiscoverClick={handleDiscoverClick}
             onVoiceModeClick={handleVoiceModeClick}
             onImageGenerationClick={handleImageGenerationClick}
@@ -529,19 +681,9 @@ export default function AIWebChat() {
         onLoadSession={(sessionMessages) => {
           console.log("📖 Loading session with", sessionMessages.length, "messages")
 
-          // Set the messages
+          // Set the messages and switch to answer mode
           setMessages(sessionMessages)
-
-          // Find the first user message for the question
-          const firstUserMessage = sessionMessages.find((msg) => msg.role === "user")
-          const lastAssistantMessage = sessionMessages.find((msg) => msg.role === "assistant")
-
-          if (firstUserMessage && lastAssistantMessage) {
-            // Set up the answer mode with the loaded conversation
-            setCurrentQuestion(firstUserMessage.content)
-            setCurrentAnswer(lastAssistantMessage.content)
-            setIsAnswerMode(true)
-          }
+          setIsAnswerMode(true)
 
           // Close the history modal
           setIsHistoryOpen(false)

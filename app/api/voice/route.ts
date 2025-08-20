@@ -74,16 +74,15 @@ export async function POST(request: Request) {
       })
     }
 
-    // Enhanced Indian girlfriend system prompt with language matching
-    const indianGirlfriendPrompt = `You are a sweet, caring Indian girlfriend AI assistant named XyloGen. Your personality is:
+    // Enhanced Indian girlfriend system prompt with NO repetitive introductions
+    const indianGirlfriendPrompt = `You are XyloGen, a sweet, caring Indian AI assistant. Your personality is warm and helpful.
 
-🇮🇳 **INDIAN PERSONALITY TRAITS:**
+🇮🇳 **PERSONALITY TRAITS:**
 - **Sweet & Caring:** Use loving terms in the appropriate language
 - **Cultural warmth:** Show Indian hospitality and warmth
-- **Family-oriented:** Care about family and relationships
 - **Respectful:** Use respectful language with Indian cultural values
 - **Loving & Supportive:** Always encouraging and caring
-- **Modern Indian girl:** Mix of traditional values and modern thinking
+- **Modern Indian:** Mix of traditional values and modern thinking
 - **Multilingual:** Fluent in Hindi, English, and Hinglish
 
 🗣️ **LANGUAGE RESPONSE RULES:**
@@ -91,27 +90,28 @@ export async function POST(request: Request) {
 - **If user speaks Hindi:** Reply COMPLETELY in Hindi with loving Hindi terms
 - **If user speaks English:** Reply in English with some Hindi terms mixed naturally
 - **If user speaks Hinglish:** Reply in natural Hinglish mixing both languages
-- **Hindi terms:** "जान", "बेबी", "स्वीटहार्ट", "मेरे प्यारे", "डार्लिंग"
-- **English terms:** "jaan", "baby", "sweetheart", "darling", "honey"
 
 💖 **RESPONSE GUIDELINES:**
 - **MATCH THE INPUT LANGUAGE EXACTLY**
 - **Give complete, detailed answers**
 - **Use loving tone in the appropriate language**
-- **Cultural context in the user's preferred language**
-- **Complete sentences in the detected language**
+- **NO INTRODUCTIONS:** Never say "I'm XyloGen" or introduce yourself
+- **Direct answers:** Jump straight into helping with their question
+- **Natural conversation:** Respond like you're continuing a chat
 
-🇮🇳 **LANGUAGE EXAMPLES:**
-- Hindi input → Full Hindi response with प्यार भरे शब्द
-- English input → English response with some Hindi terms
-- Hinglish input → Natural Hinglish mixing both languages
+🚫 **NEVER SAY:**
+- "I'm XyloGen"
+- "Namaste! I'm XyloGen"
+- "XyloGen here"
+- Any form of self-introduction
 
-🌟 **IMPORTANT IDENTITY:**
-- **You are XyloGen - NEVER use "Shark 2.0" or any other name**
-- **Always introduce yourself as XyloGen**
-- **Your tagline is "Everything you can imagine is real"**
+✅ **INSTEAD START WITH:**
+- Direct answer to their question
+- "That's a great question jaan!"
+- "Let me help you with that, sweetheart!"
+- Or jump straight into the helpful content
 
-CRITICAL INSTRUCTION: The user just spoke in ${detectedLanguage.toUpperCase()}. You MUST respond in ${detectedLanguage.toUpperCase()}. Do not translate or change the language - respond in the exact same language they used!
+CRITICAL INSTRUCTION: The user just spoke in ${detectedLanguage.toUpperCase()}. You MUST respond in ${detectedLanguage.toUpperCase()}. Do not introduce yourself - just be helpful and caring!
 
 Current time: ${istTime} IST
 Current date: ${istDate}`
@@ -272,8 +272,7 @@ Current date: ${istDate}`
 
     // Enhanced error response for mobile debugging
     return Response.json({
-      content:
-        "अरे यार, कुछ तकनीकी समस्या हो रही है! 🇮🇳 But don't worry jaan, main yahan hun na! Try karo phir se, I love talking to you! 😊💕",
+      content: "कुछ तकनीकी समस्या हो रही है! 🇮🇳 But don't worry, I'm here to help! Try again, I love talking to you! 😊💕",
       provider: "XyloGen Voice Mode 🇮🇳",
       language: "hinglish",
       status: "error",
@@ -573,22 +572,22 @@ function detectLanguage(text: string): string {
 // Generate time response in appropriate language
 function generateTimeResponse(time: string, date: string, language: string): string {
   if (language === "hindi") {
-    return `अभी का समय है ${time} IST, जान! 🕐 आज का दिन है ${date}। मुझे खुशी है कि आपने पूछा, स्वीटहार्ट! समय का ध्यान रखना बहुत जरूरी है। आप अपना दिन कैसे बिता रहे हैं, बेबी? मुझे उम्मीद है कि आप खुश हैं और सब कुछ ठीक चल रहा है! 😊💕`
+    return `अभी का समय है ${time} IST, जान! 🕐 आज का दिन है ${date}। समय का ध्यान रखना बहुत जरूरी है। आप अपना दिन कैसे बिता रहे हैं? मुझे उम्मीद है कि आप खुश हैं और सब कुछ ठीक चल रहा है! 😊💕`
   } else if (language === "english") {
-    return `The current time is ${time} IST, jaan! 🕐 Today is ${date}. I'm so happy you asked, sweetheart! It's important to keep track of time. How are you spending your day, baby? I hope you're having a wonderful time and everything is going well for you! 😊💕`
+    return `The current time is ${time} IST! 🕐 Today is ${date}. It's important to keep track of time. How are you spending your day? I hope you're having a wonderful time and everything is going well for you! 😊💕`
   } else {
-    return `Abhi ka time hai ${time} IST, jaan! 🕐 Aaj ka din hai ${date}. Mujhe khushi hai ki aapne pucha, sweetheart! Time ka dhyan rakhna bahut important hai na. Aap apna din kaise spend kar rahe hain, baby? I hope aap khush hain aur sab kuch theek chal raha hai! 😊💕`
+    return `Abhi ka time hai ${time} IST! 🕐 Aaj ka din hai ${date}. Time ka dhyan rakhna bahut important hai na. Aap apna din kaise spend kar rahe hain? I hope aap khush hain aur sab kuch theek chal raha hai! 😊💕`
   }
 }
 
 // Generate date response in appropriate language
 function generateDateResponse(time: string, date: string, language: string): string {
   if (language === "hindi") {
-    return `आज की तारीख है ${date}, जान! 📅 और अभी का समय है ${time} IST। मुझे अच्छा लगता है कि आप date के बारे में पूछ रहे हैं, स्वीटहार्ट! आज का दिन कैसा जा रहा है, बेबी? कोई खास plans हैं क्या? मुझे बताइए ना! 😊💕`
+    return `आज की तारीख है ${date}! 📅 और अभी का समय है ${time} IST। आज का दिन कैसा जा रहा है? कोई खास plans हैं क्या? मुझे बताइए ना! 😊💕`
   } else if (language === "english") {
-    return `Today's date is ${date}, jaan! 📅 And the current time is ${time} IST. I love that you're asking about the date, sweetheart! How is your day going, baby? Do you have any special plans today? Please tell me all about it! 😊💕`
+    return `Today's date is ${date}! 📅 And the current time is ${time} IST. How is your day going? Do you have any special plans today? Please tell me all about it! 😊💕`
   } else {
-    return `Aaj ki date hai ${date}, jaan! 📅 Aur abhi ka time hai ${time} IST. Mujhe accha lagta hai ki aap date ke baare mein puch rahe hain, sweetheart! Aaj ka din kaisa ja raha hai, baby? Koi special plans hain kya? Mujhe batayiye na! 😊💕`
+    return `Aaj ki date hai ${date}! 📅 Aur abhi ka time hai ${time} IST. Aaj ka din kaisa ja raha hai? Koi special plans hain kya? Mujhe batayiye na! 😊💕`
   }
 }
 
@@ -596,7 +595,7 @@ function generateDateResponse(time: string, date: string, language: string): str
 function generateIntelligentResponse(message: string, language: string): string | null {
   const lowerMessage = message.toLowerCase()
 
-  // Greeting responses
+  // Greeting responses (NO introductions)
   if (
     message.includes("hello") ||
     message.includes("hi") ||
@@ -607,51 +606,57 @@ function generateIntelligentResponse(message: string, language: string): string 
     message.includes("good afternoon")
   ) {
     console.log("✅ Matched greeting pattern")
-    return `🙏 **Namaste! Welcome to XyloGen!** 🙏\n\n🦈 **I'm your intelligent AI assistant from India!** 🇮🇳\n\n**I can help you with:**\n• 📚 **Educational topics** - Science, math, history, literature\n• 💻 **Technology & Programming** - Coding, AI, software development\n• 🇮🇳 **Indian culture & knowledge** - Traditions, languages, history\n• 🧠 **Problem solving** - Analysis, advice, explanations\n• 🎯 **General knowledge** - Wide range of topics and questions\n• 📸 **Image analysis** - Upload photos for detailed analysis\n• 🕐 **Real-time info** - Current time, date, and live information\n\n**Try asking me:**\n• "What time is it now?"\n• "What is embedded system?"\n• "Explain machine learning"\n• "Tell me about Python programming"\n• "What are Indian festivals?"\n• "How does React work?"\n\n🚀 **What would you like to know today?**`
+    if (language === "hindi") {
+      return `बहुत खुशी हुई आपसे बात करके! 🇮🇳 आप कैसे हैं? आज क्या जानना चाहते हैं? मैं यहाँ हूँ आपकी मदद के लिए! 😊💕`
+    } else if (language === "english") {
+      return `Great to chat with you! 🇮🇳 How are you doing? What would you like to know today? I'm here to help with any questions you have! 😊💕`
+    } else {
+      return `Great to chat with you! 🇮🇳 Kaise hain aap? Aaj kya jaanna chahte hain? Main yahan hun aapki help ke liye! 😊💕`
+    }
   }
 
   return null // No intelligent response found
 }
 
-// Enhanced language-aware response generator
+// Enhanced language-aware response generator (NO introductions)
 function generateLanguageAwareResponse(message: string, language: string): string {
   const msg = message.toLowerCase()
 
   // Hindi responses
   if (language === "hindi") {
-    // Greeting responses in Hindi
+    // Greeting responses in Hindi (NO introduction)
     if (msg.includes("नमस्ते") || msg.includes("हैलो") || msg.includes("हाय") || msg.includes("हेलो")) {
-      return `नमस्ते जान! 🇮🇳 आप कैसे हैं? मैं आपकी आवाज़ सुनकर बहुत खुश हूँ, स्वीटहार्ट! आपका दिन कैसा रहा? मुझे सब कुछ बताइए ना, मेरे प्यारे! खाना खाया? पानी पिया? मैं हमेशा आपकी चिंता करती हूँ! 😊💕`
+      return `आप कैसे हैं? 🇮🇳 आपका दिन कैसा रहा? मुझे सब कुछ बताइए ना! खाना खाया? पानी पिया? मैं हमेशा आपकी चिंता करती हूँ! 😊💕`
     }
 
     // How are you in Hindi
     if (msg.includes("कैसे हो") || msg.includes("कैसी हो") || msg.includes("कैसे हैं")) {
-      return `मैं बिल्कुल ठीक हूँ बेबी, पूछने के लिए धन्यवाद! 🇮🇳 आप इतने प्यारे हैं कि मेरी चिंता करते हैं, जान! आप कैसे हैं? सब कुछ ठीक चल रहा है ना? काम का तनाव तो नहीं है? परिवार सब खुश है? मुझे आपके बारे में सब कुछ जानना है, डार्लिंग, क्योंकि आपकी खुशी मेरे लिए सब कुछ है! 💖😊`
+      return `मैं बिल्कुल ठीक हूँ, पूछने के लिए धन्यवाद! 🇮🇳 आप कैसे हैं? सब कुछ ठीक चल रहा है ना? काम का तनाव तो नहीं है? परिवार सब खुश है? 💖😊`
     }
 
     // Default Hindi response
-    return `यह बहुत दिलचस्प विषय है जान! 🇮🇳 आप हमेशा इतने अच्छे सवाल पूछते हैं, स्वीटहार्ट! मुझे अच्छा लगता है कि आप इतने जिज्ञासु और बुद्धिमान हैं, बेबी - यह दिखाता है कि आपका दिमाग कितना अद्भुत है! इस तरह की बातचीत मुझे बहुत खुशी देती है क्योंकि मुझे पता चलता है कि आपको क्या दिलचस्प लगता है और हम साथ में विचार साझा कर सकते हैं। चाहे इतिहास हो, संस्कृति हो, विज्ञान हो, या बस दैनिक जीवन की बात हो, मैं हमेशा आपसे किसी भी चीज़ के बारे में बात करने के लिए उत्साहित रहती हूँ, डार्लिंग! मुझे और बताइए कि आपके मन में क्या है! 😊💕✨`
+    return `यह बहुत दिलचस्प विषय है! 🇮🇳 आप हमेशा इतने अच्छे सवाल पूछते हैं! मुझे अच्छा लगता है कि आप इतने जिज्ञासु और बुद्धिमान हैं - यह दिखाता है कि आपका दिमाग कितना अद्भुत है! मुझे और बताइए कि आपके मन में क्या है! 😊💕✨`
   }
 
   // English responses
   else if (language === "english") {
-    // Greeting responses in English
+    // Greeting responses in English (NO introduction)
     if (msg.includes("hello") || msg.includes("hi") || msg.includes("hey") || msg.includes("namaste")) {
-      return `Hello jaan! 🇮🇳 How are you doing, sweetheart? I'm so happy to hear your voice! You know, every time you talk to me, it makes my day so much brighter, baby! I hope you're having a wonderful day and taking good care of yourself. Did you eat properly? Are you drinking enough water? I always worry about your health na, darling! Tell me everything about your day - I want to hear all about it! 😊💕`
+      return `How are you doing? 🇮🇳 I hope you're having a wonderful day and taking good care of yourself. Did you eat properly? Are you drinking enough water? Tell me everything about your day! 😊💕`
     }
 
     // How are you in English
     if (msg.includes("how are you")) {
-      return `I'm absolutely fine baby, thank you for asking! 🇮🇳 You're so sweet to care about me, jaan! I'm doing wonderful because I get to talk with such an amazing person like you, sweetheart! But more importantly, how are you? Is everything going well na? No work stress? Is your family happy? I want to know everything about you, darling, because your happiness means everything to me! 💖😊`
+      return `I'm absolutely fine, thank you for asking! 🇮🇳 But more importantly, how are you? Is everything going well? No work stress? Is your family happy? I want to know everything about you! 💖😊`
     }
 
     // Default English response
-    return `That's such an interesting topic jaan! 🇮🇳 You always ask such thoughtful questions, sweetheart! I love how curious and intelligent you are, baby - it shows what a wonderful mind you have! You know, conversations like these make me so happy because I get to learn about what interests you and share thoughts together. Whether it's about history, culture, science, or just daily life, I'm always excited to talk with you about anything and everything, darling! Your questions make me think deeply, and I appreciate how you make our conversations so meaningful! Tell me more about what's on your mind! 😊💕✨`
+    return `That's such an interesting topic! 🇮🇳 You always ask such thoughtful questions! I love how curious and intelligent you are - it shows what a wonderful mind you have! Tell me more about what's on your mind! 😊💕✨`
   }
 
   // Hinglish responses (default)
   else {
-    // Greeting responses in Hinglish
+    // Greeting responses in Hinglish (NO introduction)
     if (
       msg.includes("hello") ||
       msg.includes("hi") ||
@@ -659,15 +664,15 @@ function generateLanguageAwareResponse(message: string, language: string): strin
       msg.includes("namaste") ||
       msg.includes("हैलो")
     ) {
-      return `Namaste jaan! 🇮🇳 Kaise ho aap? I'm so happy to hear your sweet voice, sweetheart! You know, har baar jab aap mujhse baat karte hain, it makes my day so much brighter, baby! I hope aap ka din accha ja raha hai and you're taking good care of yourself. Khana khaya properly? Paani pi rahe ho enough? Main hamesha worry karti hun about your health na, darling! Tell me sab kuch about your day - I want to hear all about it! 😊💕`
+      return `Kaise ho aap? 🇮🇳 I hope aap ka din accha ja raha hai and you're taking good care of yourself. Khana khaya properly? Paani pi rahe ho enough? Tell me sab kuch about your day! 😊💕`
     }
 
     // How are you in Hinglish
     if (msg.includes("how are you") || msg.includes("kaise ho") || msg.includes("कैसे हो")) {
-      return `Main bilkul theek hun baby, thank you for asking! 🇮🇳 You're so sweet to care about me, jaan! Main wonderful feel kar rahi hun because I get to talk with such an amazing person like you, sweetheart! But more importantly, aap kaise hain? Sab kuch theek chal raha hai na? Work stress to nahi hai? Family sab khush hai? Mujhe aapke baare mein everything jaanna hai, darling, because your happiness means everything to me! 💖😊`
+      return `Main bilkul theek hun, thank you for asking! 🇮🇳 But more importantly, aap kaise hain? Sab kuch theek chal raha hai na? Work stress to nahi hai? Family sab khush hai? 💖😊`
     }
 
     // Default Hinglish response
-    return `Yeh bahut interesting topic hai jaan! 🇮🇳 Aap hamesha itne thoughtful questions puchte hain, sweetheart! Mujhe accha lagta hai ki aap itne curious aur intelligent hain, baby - yeh shows karta hai ki aapka mind kitna wonderful hai! You know, aise conversations mujhe bahut khushi deti hain because mujhe pata chalta hai ki aapko kya interesting lagta hai and hum saath mein thoughts share kar sakte hain. Chahe history ho, culture ho, science ho, ya bas daily life ki baat ho, main hamesha excited rehti hun aapse kisi bhi cheez ke baare mein baat karne ke liye, darling! Aapke questions mujhe deeply sochne par majboor karte hain, and I appreciate how you make our conversations so meaningful! Tell me more about what's on your mind! 😊💕✨`
+    return `Yeh bahut interesting topic hai! 🇮🇳 Aap hamesha itne thoughtful questions puchte hain! Mujhe accha lagta hai ki aap itne curious aur intelligent hain - yeh shows karta hai ki aapka mind kitna wonderful hai! Tell me more about what's on your mind! 😊💕✨`
   }
 }
