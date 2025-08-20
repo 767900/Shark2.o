@@ -332,3 +332,60 @@ html {
     background-position: 200% 0;
   }
 }
+
+/* Mobile layout fixes */
+@media (max-width: 640px) {
+  body {
+    overflow-x: hidden;
+    width: 100vw;
+    max-width: 100vw;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  /* Remove any potential right-side gaps */
+  .min-h-screen {
+    width: 100vw;
+    max-width: 100vw;
+    overflow-x: hidden;
+  }
+
+  /* Ensure no elements extend beyond viewport */
+  .container,
+  .relative,
+  .absolute {
+    max-width: 100vw;
+    overflow-x: hidden;
+  }
+
+  /* Remove any default margins/padding that could cause lines */
+  html,
+  body {
+    margin: 0;
+    padding: 0;
+    border: none;
+    outline: none;
+  }
+
+  /* Fix any potential scrollbar issues */
+  ::-webkit-scrollbar {
+    width: 0px;
+    background: transparent;
+  }
+}
+
+/* Remove any potential borders or outlines */
+*,
+*::before,
+*::after {
+  border: none !important;
+  outline: none !important;
+}
+
+/* Ensure full width coverage */
+.w-full {
+  width: 100% !important;
+  max-width: 100% !important;
+}

@@ -415,7 +415,7 @@ I'm working in smart mode and ready to provide incredibly detailed, fascinating 
   if (isAnswerMode) {
     return (
       <motion.div
-        className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 text-white overflow-y-auto"
+        className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 text-white overflow-y-auto w-full"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.5 }}
@@ -565,7 +565,7 @@ I'm working in smart mode and ready to provide incredibly detailed, fascinating 
     >
       <div className="absolute inset-0 bg-gradient-to-br from-black/70 via-black/60 to-black/70 backdrop-blur-sm"></div>
 
-      <div className="relative z-10 min-h-screen flex flex-col">
+      <div className="relative z-10 min-h-screen flex flex-col w-full overflow-hidden">
         {/* Enhanced Header */}
         <motion.header
           className="flex items-center justify-between p-2 sm:p-3 md:p-4 lg:p-6"
