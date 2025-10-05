@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            model: "llama-3.1-sonar-large-128k-online",
+            model: "sonar",
             messages: [
               {
                 role: "system",
@@ -35,14 +35,10 @@ export async function POST(request: NextRequest) {
             temperature: 0.7,
             top_p: 0.9,
             return_citations: true,
-            search_domain_filter: ["perplexity.ai"],
             return_images: false,
             return_related_questions: true,
             search_recency_filter: "month",
-            top_k: 0,
             stream: false,
-            presence_penalty: 0,
-            frequency_penalty: 1,
           }),
         })
 
@@ -57,6 +53,9 @@ export async function POST(request: NextRequest) {
             provider: "Perplexity AI",
             status: "success",
           })
+        } else {
+          const errorData = await perplexityResponse.json()
+          console.log("❌ Perplexity API error:", errorData)
         }
       } catch (error) {
         console.log("❌ Perplexity API failed:", error)
